@@ -5,6 +5,7 @@
 #include "Metadata.h"
 
 Metadata::Metadata(std::string tableName) {
+    this->tableName = tableName;
     metadataFileName = utils::getMetadataFileName(tableName);
     dataFileName = utils::getDataFileName(tableName);
     columns = std::vector<std::string>();
@@ -33,6 +34,9 @@ Metadata::Metadata(std::string tableName) {
             keyCols.push_back(val);
         }
         metadataIn.close();
+    } else {
+        std::ofstream fout(metadataFileName);
+        fout = std::ofstream(dataFileName);
     }
 }
 
@@ -64,6 +68,24 @@ void Metadata::append(std::string &colName, Metadata::ColType &colType, bool isK
     if (isKey) {
         keyCols.push_back(colName);
     }
+}
+
+Metadata::~Metadata() {
+    metadataFileName = utils::getMetadataFileName(tableName);
+    std::ofstream fout(metadataFileName);
+    for (const auto& colName : columns) {
+        fout << colName << " ";
+    }
+    fout << std::endl;
+    for (const ColType &colType : datatypes) {
+        fout << colType.str << " ";
+    }
+    fout << std::endl;
+    for (const std::string &keyCol : keyCols) {
+        fout << keyCol.str << " ";
+    }
+    fout << std::endl;
+    fout.close();
 }
 
 

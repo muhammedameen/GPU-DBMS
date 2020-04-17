@@ -33,12 +33,15 @@ public:
     public:
         DATATYPE type;
         int size;
+        std::string str;
         ColType(){
             type = TYPE_INVALID;
             size = 0;
+            str = ""
         }
         explicit ColType(std::string typeString) {
             utils::toLower(typeString);
+            str = typeString;
             if (typeString == "int") {
                 type = TYPE_INT;
                 size = 32;
@@ -75,9 +78,12 @@ public:
 
     void append(std::string &colName, ColType &colType, bool isKey = false);
 
-private:
+    ~Metadata();
+
     std::string metadataFileName;
     std::string dataFileName;
+    std::string tableName;
+private:
 
     std::vector<std::string> columns;
     std::vector<ColType> datatypes;
