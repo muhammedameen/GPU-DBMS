@@ -82,12 +82,46 @@ Metadata::~Metadata() {
     }
     fout << std::endl;
     for (const std::string &keyCol : keyCols) {
-        fout << keyCol.str << " ";
+        fout << keyCol << " ";
     }
     fout << std::endl;
     fout.close();
 }
 
 
+Metadata::ColType::ColType() {
+    type = TYPE_INVALID;
+    size = 0;
+    str = "";
+}
 
-
+Metadata::ColType::ColType(std::string typeString) {
+    utils::toLower(typeString);
+    str = typeString;
+    if (typeString == "int") {
+        type = TYPE_INT;
+        size = 32;
+    } else if (typeString == "float") {
+        type = TYPE_FLOAT;
+        size = 32;
+    } else if (typeString == "boolean") {
+        type = TYPE_BOOL;
+        size = 1;
+    } else if (typeString == "datetime") {
+        type = TYPE_DATETIME;
+        size = 64;
+    } else {
+        if (typeString.length() < 10 || typeString[7] != '(' || typeString[typeString.length() - 1] != ')') {
+            // :TODO SOME ERROR OCCURRED
+            type = TYPE_INVALID;
+            size = 0;
+        } else {
+            std::string wd = typeString.substr(0, 7);
+            if(wd == "varchar") {
+                type = TYPE_VARCHAR;
+                std::stringstream val(typeString.substr(8, typeString.length()));
+                val >> size;
+            }
+        }
+    }
+}
