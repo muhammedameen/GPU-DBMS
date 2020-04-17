@@ -6,7 +6,7 @@
 #include "utils.h"
 
 std::string const utils::DATABASE_FILE_PATH = "../DB/Database";
-std::vector<std::string> tables = std::vector<std::string>();
+std::vector<std::string> utils::tables = std::vector<std::string>();
 
 void utils::ltrim(std::string &s)  {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {

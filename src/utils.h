@@ -18,13 +18,13 @@ public:
     static std::vector<std::string> tables;
 
     // trim from start (in place)
-    static inline void ltrim(std::string &s);
+    static void ltrim(std::string &s);
 
     // trim from end (in place)
-    static inline void rtrim(std::string &s);
+    static void rtrim(std::string &s);
 
     // trim from both ends (in place)
-    static inline void trim(std::string &s);
+    static void trim(std::string &s);
 
     static std::string getFistWord(std::string &basicString);
 

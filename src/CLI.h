@@ -14,11 +14,10 @@ private:
     std::string line;
     bool done;
 
-    bool testLine();
 public:
     CLI();
-
     std::string readLine();
+    bool testLine();
 };
 
 
