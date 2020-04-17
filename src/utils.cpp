@@ -57,9 +57,10 @@ bool utils::fileExists(std::string &filename) {
 
 void utils::loadTables() {
     std::string filename = DATABASE_FILE_PATH;
+    std::ifstream fin(filename);
     if (utils::fileExists(filename)) {
         std::string tableName;
-        while (std::cin >> tableName) {
+        while (fin >> tableName) {
             tables.push_back(tableName);
         }
     }
