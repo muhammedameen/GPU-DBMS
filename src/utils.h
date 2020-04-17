@@ -9,9 +9,14 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <vector>
 
 class utils {
 public:
+    static const std::string DATABASE_FILE_PATH;
+
+    static std::vector<std::string> tables;
+
     // trim from start (in place)
     static inline void ltrim(std::string &s);
 
@@ -32,6 +37,14 @@ public:
     static std::string getDataFileName(std::string &tableName);
 
     static bool fileExists(std::string &filename);
+
+    static void loadTables();
+
+    static bool tableExists(std::string &tableName);
+
+    static void addTable(std::string &tableName);
+
+    static void writeDatabase();
 };
 
 

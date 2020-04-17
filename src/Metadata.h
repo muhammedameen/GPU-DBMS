@@ -69,9 +69,11 @@ public:
 
     };
 
-    ColType getColType(std::string colName);
+    ColType getColType(std::string &colName);
 
     ColType getColType(int col);
+
+    void append(std::string &colName, ColType &colType, bool isKey = false);
 
 private:
     std::string metadataFileName;

@@ -2,7 +2,11 @@
 // Created by gautam on 17/04/20.
 //
 
+#include <fstream>
 #include "utils.h"
+
+std::string const utils::DATABASE_FILE_PATH = "../DB/Database";
+std::vector<std::string> tables = std::vector<std::string>();
 
 void utils::ltrim(std::string &s)  {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
@@ -22,7 +26,7 @@ void utils::trim(std::string &s) {
 }
 
 std::string utils::getFistWord(std::string &query) {
-    return query.substr(0, query.find(" "));
+    return query.substr(0, query.find(' '));
 }
 
 void utils::toLower(std::string &upper) {
@@ -50,3 +54,44 @@ bool utils::fileExists(std::string &filename) {
         return false;
     }
 }
+
+void utils::loadTables() {
+    std::string filename = DATABASE_FILE_PATH;
+    if (utils::fileExists(filename)) {
+        std::string tableName;
+        while (std::cin >> tableName) {
+            tables.push_back(tableName);
+        }
+    }
+}
+
+bool utils::tableExists(std::string &tableName) {
+    if (tables.empty()) {
+        loadTables();
+        if(tables.empty()) {
+            return false;
+        }
+    }
+    int i;
+    for (i = 0; i < tables.size(); ++i) {
+        if(tables[i] == tableName) {
+            break;
+        }
+    }
+    return i == tables.size();
+}
+
+void utils::addTable(std::string &tableName) {
+    tables.push_back(tableName);
+}
+
+void utils::writeDatabase() {
+    std::string filename = DATABASE_FILE_PATH;
+    std::ofstream fout(filename);
+    for (const auto& tableName : tables) {
+        fout << tableName << std::endl;
+    }
+    fout.close();
+}
+
+

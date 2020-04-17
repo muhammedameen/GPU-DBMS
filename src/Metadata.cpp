@@ -26,6 +26,12 @@ Metadata::Metadata(std::string tableName) {
             ColType temp(val);
             datatypes.push_back(temp);
         }
+        // Read key columns
+        getline(metadataIn, line);
+        iss = std::istringstream(line);
+        while (iss >> val) {
+            keyCols.push_back(val);
+        }
         metadataIn.close();
     }
 }
@@ -42,7 +48,7 @@ Metadata::ColType Metadata::getColType(int col) {
     return datatypes[col];
 }
 
-Metadata::ColType Metadata::getColType(std::string colName) {
+Metadata::ColType Metadata::getColType(std::string &colName) {
     int i;
     for (i = 0; i < columns.size(); ++i) {
         if (columns[i] == colName) {
@@ -51,5 +57,15 @@ Metadata::ColType Metadata::getColType(std::string colName) {
     }
     return datatypes[i];
 }
+
+void Metadata::append(std::string &colName, Metadata::ColType &colType, bool isKey) {
+    columns.push_back(colName);
+    datatypes.push_back(colType);
+    if (isKey) {
+        keyCols.push_back(colName);
+    }
+}
+
+
 
 
