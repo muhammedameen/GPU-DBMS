@@ -8,6 +8,7 @@
 
 #include <string>
 #include <algorithm>
+#include <iostream>
 
 class utils {
 public:
@@ -21,6 +22,16 @@ public:
     static inline void trim(std::string &s);
 
     static std::string getFistWord(std::string &basicString);
+
+    static void toLower(std::string &upper);
+
+    static void invalidQuery(std::string &query);
+
+    static std::string getMetadataFileName(std::string &tableName);
+
+    static std::string getDataFileName(std::string &tableName);
+
+    static bool fileExists(std::string &filename);
 };
 
 

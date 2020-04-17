@@ -22,5 +22,31 @@ void utils::trim(std::string &s) {
 }
 
 std::string utils::getFistWord(std::string &query) {
-    return query.substr(0, query.find(' '));
+    return query.substr(0, query.find(" "));
+}
+
+void utils::toLower(std::string &upper) {
+    std::transform(upper.begin(), upper.end(), upper.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+}
+
+void utils::invalidQuery(std::string &query) {
+    std::cout << "\"" << query << "\"" << "is not a valid query" << std::endl;
+}
+
+std::string utils::getMetadataFileName(std::string &tableName) {
+    return tableName + ".mdata";
+}
+
+std::string utils::getDataFileName(std::string &tableName) {
+    return tableName + ".data";
+}
+
+bool utils::fileExists(std::string &filename) {
+    if (FILE *file = fopen(filename.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
 }

@@ -10,10 +10,47 @@ Parser::Parser():type(INVALID){
 
 void Parser::parse(std::string query) {
     type = getQueryType(query);
-
+    utils::toLower(query);
+    if (type == INVALID) {
+        utils::invalidQuery(query);
+    } else if (type == CREATE) {
+        // CreateClass.execute(query);
+    } else if (type == ALTER) {
+        // AlterClass.execute(query);
+    } else if (type == DROP) {
+        // DropClass.execute(query);
+    } else if (type == TRUNCATE) {
+        // TruncateClass.execute(query);
+    } else if (type == INSERT) {
+        // InsertClass.execute(query);
+    } else if (type == SELECT) {
+        // SelectClass.execute(query);
+    } else if (type == UPDATE) {
+        // UpdateClass.execute(query);
+    } else if (type == DELETE) {
+        // DeleteClass.execute(query);
+    }
 }
 
 Parser::QUERY_TYPE Parser::getQueryType(std::string &query) {
     std::string word = utils::getFistWord(query);
+    utils::toLower(word);
+    if(word == "create") {
+        return CREATE;
+    } else if (word == "alter") {
+        return ALTER;
+    } else if (word == "insert") {
+        return INSERT;
+    } else if (word == "drop") {
+        return DROP;
+    } else if (word == "truncate") {
+        return TRUNCATE;
+    } else if (word == "select") {
+        return SELECT;
+    } else if (word == "update") {
+        return UPDATE;
+    } else if (word == "delete") {
+        return DELETE;
+    }
     return INVALID;
 }
