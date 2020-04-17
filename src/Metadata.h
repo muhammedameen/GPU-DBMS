@@ -44,13 +44,15 @@ public:
 
     void append(std::string &colName, ColType &colType, bool isKey = false);
 
+    bool appendKey(std::string &keyName);
+
     ~Metadata();
 
     std::string metadataFileName;
     std::string dataFileName;
     std::string tableName;
-private:
 
+private:
     std::vector<std::string> columns;
     std::vector<ColType> datatypes;
     std::vector<std::string> keyCols;

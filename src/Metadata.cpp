@@ -88,6 +88,18 @@ Metadata::~Metadata() {
     fout.close();
 }
 
+bool Metadata::appendKey(std::string &keyName) {
+    if(columns.empty())
+        return false;
+    int i;
+    for (i = 0; i < columns.size(); ++i) {
+        if (columns[i] == keyName) {
+            break;
+        }
+    }
+    return i == columns.size();
+}
+
 
 Metadata::ColType::ColType() {
     type = TYPE_INVALID;
