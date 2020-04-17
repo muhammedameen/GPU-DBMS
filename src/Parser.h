@@ -6,9 +6,30 @@
 #define DBASE_PARSER_H
 
 
+#include <string>
+#include "utils.h"
+
 class Parser {
+private:
+    enum QUERY_TYPE {
+        CREATE,         // CPU
+        ALTER,          // CPU + check using GPU(?)
+        DROP,           // CPU
+        TRUNCATE,       // CPU
+        INSERT,         // GPU (?) if B+ tree, insertion can be done in parallel
+        SELECT,         // GPU
+        UPDATE,         // GPU
+        DELETE,         // GPU
+        INVALID         // Invalid query type
+    };
+
+    QUERY_TYPE type;
 public:
     Parser();
+
+    void parse(std::string query);
+
+    static QUERY_TYPE getQueryType(std::string &query);
 };
 
 

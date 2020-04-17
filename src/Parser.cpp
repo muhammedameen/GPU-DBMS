@@ -4,4 +4,16 @@
 
 #include "Parser.h"
 
-Parser::Parser() = default;
+Parser::Parser():type(INVALID){
+
+}
+
+void Parser::parse(std::string query) {
+    type = getQueryType(query);
+
+}
+
+Parser::QUERY_TYPE Parser::getQueryType(std::string &query) {
+    std::string word = utils::getFistWord(query);
+    return INVALID;
+}

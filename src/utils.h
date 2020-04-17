@@ -19,6 +19,8 @@ public:
 
     // trim from both ends (in place)
     static inline void trim(std::string &s);
+
+    static std::string getFistWord(std::string &basicString);
 };
 
 

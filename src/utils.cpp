@@ -20,3 +20,7 @@ void utils::trim(std::string &s) {
     ltrim(s);
     rtrim(s);
 }
+
+std::string utils::getFistWord(std::string &query) {
+    return query.substr(0, query.find(' '));
+}
