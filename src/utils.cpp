@@ -92,6 +92,16 @@ void utils::addTable(std::string &tableName) {
     tables.push_back(tableName);
 }
 
+void utils::dropTable(string &tableName){
+	for (i = 0; i < tables.size(); ++i) {
+        if(tables[i] == tableName) {
+            break;
+        }
+    }
+    tables.erase(i);
+    return;
+}
+
 void utils::writeDatabase() {
     std::string filename = DATABASE_FILE_PATH;
     std::ofstream fout(filename);

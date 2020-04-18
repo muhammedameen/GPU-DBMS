@@ -48,6 +48,8 @@ public:
 
     static void addTable(std::string &tableName);
 
+    static void dropTable(std::string &tableName);
+
     static void writeDatabase();
 };
 
