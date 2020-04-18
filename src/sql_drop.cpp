@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #include "sql_drop.h"
 
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
@@ -24,3 +25,15 @@ void drop::execute(string query){
     	cout<<"Error removing the Metadata File"<<endl;
     return;
 }
+=======
+//
+// Created by gautam on 18/04/20.
+//
+
+#include "sql_drop.h"
+
+void sql_drop::execute(std::string &query) {
+    utils::toLower(query);
+
+}
+>>>>>>> 026b43acd9942eab75760d18ac0daee053b25e91

@@ -24,5 +24,6 @@ std::string CLI::readLine() {
 
 bool CLI::testLine() {
     utils::trim(line);
+    utils::toLower(line);
     return line.empty();
 }
