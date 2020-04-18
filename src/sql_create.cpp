@@ -46,7 +46,6 @@ namespace create {
         utils::toLower(word);
         if (utils::tableExists(word))
             invalidQuery(query);
-        utils::addTable(word);
         Metadata m(word);
 
         iss >> word;
@@ -72,7 +71,6 @@ namespace create {
                 iss >> word;
                 if (word != ")")
                     invalidQuery(query);
-                continue;
             } else {
                 iss >> col_type;
                 if (col_type == "varchar") {
@@ -83,7 +81,6 @@ namespace create {
                     iss >> word;
                     if (word != ")")
                         invalidQuery(query);
-                    col_type.append("(");
                     col_type += "(" + varchar_size + ")";
                 }
                 Metadata::ColType c(col_type);
@@ -97,5 +94,7 @@ namespace create {
             if (word == ")")
                 break;
         }
+        m.commit();
+        utils::addTable(word);
     }
 }
