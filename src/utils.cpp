@@ -5,7 +5,8 @@
 #include <fstream>
 #include "utils.h"
 
-std::string const utils::DATABASE_FILE_PATH = "../DB/Database";
+std::string const utils::DATABASE_DIR = "../DB";
+std::string const utils::DATABASE_FILE_PATH = DATABASE_DIR + "/Database";
 std::vector<std::string> utils::tables = std::vector<std::string>();
 
 void utils::ltrim(std::string &s)  {
@@ -39,11 +40,11 @@ void utils::invalidQuery(std::string &query) {
 }
 
 std::string utils::getMetadataFileName(std::string &tableName) {
-    return DATABASE_FILE_PATH + "/" + tableName + ".mdata";
+    return DATABASE_DIR + "/" + tableName + ".mdata";
 }
 
 std::string utils::getDataFileName(std::string &tableName) {
-    return DATABASE_FILE_PATH + "/" + tableName + ".data";
+    return DATABASE_DIR + "/" + tableName + ".data";
 }
 
 bool utils::fileExists(std::string &filename) {

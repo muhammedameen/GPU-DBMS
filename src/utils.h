@@ -15,6 +15,8 @@ class utils {
 public:
     static const std::string DATABASE_FILE_PATH;
 
+    static const std::string DATABASE_DIR;
+
     static std::vector<std::string> tables;
 
     // trim from start (in place)

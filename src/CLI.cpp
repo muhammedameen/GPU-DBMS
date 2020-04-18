@@ -7,15 +7,14 @@
 CLI::CLI(): done(false), line("") {
     // load tables
     // get some stuff ready later
-    std::cout << "> ";
-    std::cout.flush();
 }
 
 std::string CLI::readLine() {
+    std::string query;
     do {
-        std::getline(std::cin, line);
         std::cout << "> ";
         std::cout.flush();
+        std::getline(std::cin, line);
     } while (testLine());
     if(line == "exit" || line == "quit") {
         return "";

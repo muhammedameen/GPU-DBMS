@@ -8,5 +8,3 @@ namespace create{
 
     void execute(std::string query);
 }
-
-
