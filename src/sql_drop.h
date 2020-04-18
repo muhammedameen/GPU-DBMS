@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-#include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <map>
-#include "tokeniser.h"
-#include "utils.h"
-
-
-class drop {
-public:
-    void execute(string query);
-};
-=======
 //
 // Created by gautam on 18/04/20.
 //
@@ -20,8 +5,10 @@ public:
 #ifndef DBASE_SQL_DROP_H
 #define DBASE_SQL_DROP_H
 
-#include <string>
+#include <string.h>
 #include "utils.h"
+#include "tokenizer.h"
+#include <stdio.h>
 
 class sql_drop {
 public:
@@ -30,4 +17,3 @@ public:
 
 
 #endif //DBASE_SQL_DROP_H
->>>>>>> 026b43acd9942eab75760d18ac0daee053b25e91

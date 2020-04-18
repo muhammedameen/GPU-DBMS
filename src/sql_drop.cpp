@@ -1,14 +1,18 @@
-<<<<<<< HEAD
-#include "sql_drop.h"
 
+
+
+#include "sql_drop.h"
+using namespace std;
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
 
-void drop::execute(string query){
-
+void sql_drop::execute(std::string &query) {
+    utils::toLower(query);
+    tokenizer t(query);
 	string word;
-	if(word != "delete")
+	t >> word;
+	if(word != "drop")
 		invalidQuery(query);
-
+	t >> word;
 	if(!utils::tableExists(word))
 		invalidQuery(query);
 
@@ -19,21 +23,8 @@ void drop::execute(string query){
 	string mdata_file;
 	data_file = utils::getDataFileName(word);
 	mdata_file = utils::getMetadataFileName(word);
-	if( remove( data_file ) != 0 )
-    	cout<<"Error removing the Data File"<<endl;
-    if( remove( mdata_file ) != 0 )
-    	cout<<"Error removing the Metadata File"<<endl;
+	remove(data_file.c_str());
+	remove(mdata_file.c_str());
     return;
 }
-=======
-//
-// Created by gautam on 18/04/20.
-//
 
-#include "sql_drop.h"
-
-void sql_drop::execute(std::string &query) {
-    utils::toLower(query);
-
-}
->>>>>>> 026b43acd9942eab75760d18ac0daee053b25e91

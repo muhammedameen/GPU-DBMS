@@ -10,7 +10,7 @@
 #include <iostream>
 #include "utils.h"
 #include "sql_create.h"
-
+#include "sql_drop.h"
 class Parser {
 private:
     enum QUERY_TYPE {
