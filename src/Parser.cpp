@@ -17,9 +17,9 @@ void Parser::parse(std::string query) {
     } else if (type == ALTER) {
         // AlterClass.execute(query);
     } else if (type == DROP) {
-        // DropClass.execute(query);
+        sql_drop::execute(query);
     } else if (type == TRUNCATE) {
-        // TruncateClass.execute(query);
+        sql_truncate::execute(query);
     } else if (type == INSERT) {
         // InsertClass.execute(query);
     } else if (type == SELECT) {
