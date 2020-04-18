@@ -7,4 +7,4 @@ add_executable(dbase src/main.cpp
         src/sql_create.cpp src/sql_create.h
         src/CLI.cpp src/CLI.h
         src/utils.cpp src/utils.h
-        src/Parser.cpp src/Parser.h src/Metadata.cpp src/Metadata.h)
+        src/Parser.cpp src/Parser.h src/Metadata.cpp src/Metadata.h src/sql_drop.cpp src/sql_drop.h)
