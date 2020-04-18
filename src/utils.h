@@ -34,6 +34,8 @@ public:
 
     static void invalidQuery(std::string &query);
 
+    static void invalidQuery(std::string &query, std::string &errString);
+
     static std::string getMetadataFileName(std::string &tableName);
 
     static std::string getDataFileName(std::string &tableName);
