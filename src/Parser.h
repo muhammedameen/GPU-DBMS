@@ -11,6 +11,8 @@
 #include "utils.h"
 #include "sql_create.h"
 #include "sql_drop.h"
+#include "sql_truncate.h"
+
 class Parser {
 private:
     enum QUERY_TYPE {
