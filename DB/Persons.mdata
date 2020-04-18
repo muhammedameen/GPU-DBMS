@@ -1,3 +1,0 @@
-ID LastName FirstName Age 
-int varchar(255) varchar(255) int
-ID 

@@ -39,6 +39,11 @@ void utils::invalidQuery(std::string &query) {
     std::cout << "\"" << query << "\"" << "is not a valid query" << std::endl;
 }
 
+void utils::invalidQuery(std::string &query, std::string &errString) {
+    std::cout << "\"" << query << "\"" << "is not a valid query" << std::endl;
+    std::cout << "Error: " << errString << std::endl;
+}
+
 std::string utils::getMetadataFileName(std::string &tableName) {
     return DATABASE_DIR + "/" + tableName + ".mdata";
 }
@@ -95,5 +100,7 @@ void utils::writeDatabase() {
     }
     fout.close();
 }
+
+
 
 

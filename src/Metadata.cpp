@@ -81,7 +81,7 @@ bool Metadata::append(std::string &colName, Metadata::ColType &colType, bool isK
     return false;
 }
 
-Metadata::~Metadata() {
+void Metadata::commit() {
     if (valid) {
         metadataFileName = utils::getMetadataFileName(tableName);
         std::ofstream fout(metadataFileName);
