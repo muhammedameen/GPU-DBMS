@@ -13,6 +13,8 @@
 
 #include "sql_create.h"
 
+#define invalidQuery(query) {utils::invalidQuery(query); return;}
+
 using namespace std;
 
 namespace create {
@@ -34,22 +36,22 @@ namespace create {
         iss >> word;
         utils::toLower(word);
         if (word != "create")
-            utils::invalidQuery(query);
+            invalidQuery(query);
         iss >> word;
         utils::toLower(word);
         if (word != "table")
-            utils::invalidQuery(query);
+            invalidQuery(query);
         //table name
         iss >> word;
         utils::toLower(word);
         if (utils::tableExists(word))
-            utils::invalidQuery(query);
+            invalidQuery(query);
         utils::addTable(word);
         Metadata m(word);
 
         iss >> word;
         if (word != "(")
-            utils::invalidQuery(query);
+            invalidQuery(query);
         string col_name, col_type, key;
         string varchar_size;
         while (true) {
@@ -60,27 +62,27 @@ namespace create {
                 iss >> word;
                 utils::toLower(word);
                 if (word != "key")
-                    utils::invalidQuery(query);
+                    invalidQuery(query);
                 iss >> word;
                 if (word != "(")
-                    utils::invalidQuery(query);
+                    invalidQuery(query);
                 iss >> key;
                 //make this column primary key
                 m.appendKey(key);
                 iss >> word;
                 if (word != ")")
-                    utils::invalidQuery(query);
+                    invalidQuery(query);
                 continue;
             } else {
                 iss >> col_type;
                 if (col_type == "varchar") {
                     iss >> word;
                     if (word != "(")
-                        utils::invalidQuery(query);
+                        invalidQuery(query);
                     iss >> varchar_size;
                     iss >> word;
                     if (word != ")")
-                        utils::invalidQuery(query);
+                        invalidQuery(query);
                     col_type.append("(");
                     col_type += "(" + varchar_size + ")";
                 }
@@ -90,7 +92,7 @@ namespace create {
 
             iss >> word;
             if (word != "," && word != ")")
-                utils::invalidQuery(query);
+                invalidQuery(query);
 
             if (word == ")")
                 break;
