@@ -6,19 +6,24 @@
 
 Metadata::Metadata(std::string tableName) {
     this->tableName = tableName;
+    this->valid = true;
+    keyMap = std::map<std::string, int>();
     metadataFileName = utils::getMetadataFileName(tableName);
     dataFileName = utils::getDataFileName(tableName);
     columns = std::vector<std::string>();
     datatypes = std::vector<ColType>();
     keyCols = std::vector<std::string>();
+    colMap = std::map<std::string, int>();
     if (utils::fileExists(metadataFileName)) {
         std::ifstream metadataIn(metadataFileName);
         std::string line, val;
         // Read column names
         getline(metadataIn, line);
         std::istringstream iss(line);
+        int index = 0;
         while (iss >> val) {
             columns.push_back(val);
+            colMap[val] = index++;
         }
         // Read column datatypes
         getline(metadataIn, line);
@@ -30,14 +35,20 @@ Metadata::Metadata(std::string tableName) {
         // Read key columns
         getline(metadataIn, line);
         iss = std::istringstream(line);
+        index = 0;
         while (iss >> val) {
             keyCols.push_back(val);
+            keyMap[val] = index++;
         }
         metadataIn.close();
-    } else {
-        std::ofstream fout(metadataFileName);
-        fout = std::ofstream(dataFileName);
     }
+    // No need to create now, wait till destructor is reached. Might be invalidated later.
+    // else {
+    //     std::ofstream fout(metadataFileName);
+    //     fout.close();
+    //     fout = std::ofstream(dataFileName);
+    //     fout.close();
+    // }
 }
 
 std::string Metadata::getColName(int col) {
@@ -53,51 +64,62 @@ Metadata::ColType Metadata::getColType(int col) {
 }
 
 Metadata::ColType Metadata::getColType(std::string &colName) {
-    int i;
-    for (i = 0; i < columns.size(); ++i) {
-        if (columns[i] == colName) {
-            break;
-        }
-    }
-    return datatypes[i];
+    return datatypes[colMap[colName]];
 }
 
-void Metadata::append(std::string &colName, Metadata::ColType &colType, bool isKey) {
-    columns.push_back(colName);
-    datatypes.push_back(colType);
-    if (isKey) {
-        keyCols.push_back(colName);
+bool Metadata::append(std::string &colName, Metadata::ColType &colType, bool isKey) {
+    if (colMap.find(colName) == colMap.end()) {
+        colMap[colName] = columns.size();
+        columns.push_back(colName);
+        datatypes.push_back(colType);
+        if (isKey && keyMap.find(colName) == keyMap.end()) {
+            keyMap[colName] = keyCols.size();
+            keyCols.push_back(colName);
+        }
+        return true;
     }
+    return false;
 }
 
 Metadata::~Metadata() {
-    metadataFileName = utils::getMetadataFileName(tableName);
-    std::ofstream fout(metadataFileName);
-    for (const auto& colName : columns) {
-        fout << colName << " ";
+    if (valid) {
+        metadataFileName = utils::getMetadataFileName(tableName);
+        std::ofstream fout(metadataFileName);
+        for (const auto &colName : columns) {
+            fout << colName << " ";
+        }
+        fout << std::endl;
+        for (const ColType &colType : datatypes) {
+            fout << colType.str << " ";
+        }
+        fout << std::endl;
+        for (const std::string &keyCol : keyCols) {
+            fout << keyCol << " ";
+        }
+        fout << std::endl;
+        fout.close();
+        fout = std::ofstream(dataFileName);
+        fout.close();
     }
-    fout << std::endl;
-    for (const ColType &colType : datatypes) {
-        fout << colType.str << " ";
-    }
-    fout << std::endl;
-    for (const std::string &keyCol : keyCols) {
-        fout << keyCol << " ";
-    }
-    fout << std::endl;
-    fout.close();
 }
 
 bool Metadata::appendKey(std::string &keyName) {
-    if(columns.empty())
+    if(columns.empty() || colMap.find(keyName) == colMap.end())  // Col with that name doesn't exist
         return false;
-    int i;
-    for (i = 0; i < columns.size(); ++i) {
-        if (columns[i] == keyName) {
-            break;
-        }
+    if (keyMap.find(keyName) == keyMap.end()) {  // Col exists but not designated as key
+        keyMap[keyName] = keyCols.size();
+        keyCols.push_back(keyName);
     }
-    return i == columns.size();
+    return true;
+}
+
+void Metadata::invalidate() {
+    this->valid = false;
+    columns.clear();
+    colMap.clear();
+    datatypes.clear();
+    keyCols.clear();
+    keyMap.clear();
 }
 
 

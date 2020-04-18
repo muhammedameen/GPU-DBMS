@@ -11,105 +11,89 @@
 //				    PRIMARY KEY (ID)
 //				  );"
 
+#include "sql_create.h"
 
-#include <bits/stdc++.h>
-#include <fstream>
-#include "utils.h"
-#include "Metadata.h"
 using namespace std;
 
+namespace create {
 
-bool IsSpecialChar(char ch) 
-{ 
-    return (ch == '(' || ch == ')' || ch == ',' || ch == ';'); 
-}
-
-void create_table(string query){
-	for (int i = 0; i < query.size(); ++i)
-    {	
-    	if(IsSpecialChar(query[i])){
-    		query.insert(i, " ");
-    		query.insert(i+2, " ");
-    		i += 2;
-    	}
+    bool isSpecialChar(char ch) {
+        return (ch == '(' || ch == ')' || ch == ',' || ch == ';');
     }
-    string word; 
-    stringstream iss(query); 
-    iss >> word;
-    utils::toLower(word);
-    if(word != "create")
-    	utils::invalidQuery(query);
-    iss >> word;
-    utils::toLower(word);
-    if(word != "table")
-    	utils::invalidQuery(query);
-    //table name
-    iss >> word;
-    utils::toLower(word);
-    if(utils::tableExists(word))
-    	utils::invalidQuery(query);
-    utils::addTable(word);
-    Metadata m(word);
 
-    iss >> word;
-    if(word != "(")
-    	utils::invalidQuery(query);
-    string col_name, col_type, key;
-    string varchar_size;
-    while(1){
-    	iss >> col_name;
-    	utils::toLower(col_name);
+    void execute(string query) {
+        for (int i = 0; i < query.size(); ++i) {
+            if (isSpecialChar(query[i])) {
+                query.insert(i, " ");
+                query.insert(i + 2, " ");
+                i += 2;
+            }
+        }
+        string word;
+        stringstream iss(query);
+        iss >> word;
+        utils::toLower(word);
+        if (word != "create")
+            utils::invalidQuery(query);
+        iss >> word;
+        utils::toLower(word);
+        if (word != "table")
+            utils::invalidQuery(query);
+        //table name
+        iss >> word;
+        utils::toLower(word);
+        if (utils::tableExists(word))
+            utils::invalidQuery(query);
+        utils::addTable(word);
+        Metadata m(word);
 
-    	if(col_name == "primary"){
-    		iss >> word;
-    		utils::toLower(word);
-    		if(word != "key")
-    			utils::invalidQuery(query);
-    		iss >> word;
-    		if(word != "(")
-    			utils::invalidQuery(query);
-    		iss >> key;
-    		//make this column primary key
-    		m.appendKey(key);
-    		iss >> word;
-    		if(word != ")")
-    			utils::invalidQuery(query);
-    		continue;
-    	}
-    	else{
-    		iss >> col_type;
-		    if(col_type == "varchar"){
-		    	iss>>word;
-		    	if(word != "(")
-		    		utils::invalidQuery(query);
-		    	iss>>varchar_size;
-		    	iss>>word;
-		    	if(word != ")")
-		    		utils::invalidQuery(query);
-		    	col_type.append("(");
-		    	col_type = col_type + "(" + varchar_size + ")"; 
-		    }
-		    Metadata::ColType c(col_type);
-		    m.append(col_name, c, false);
-    	}
-	    
-	    iss>>word;
-	    if(word != "," && word != ")")
-			utils::invalidQuery(query);
+        iss >> word;
+        if (word != "(")
+            utils::invalidQuery(query);
+        string col_name, col_type, key;
+        string varchar_size;
+        while (true) {
+            iss >> col_name;
+            utils::toLower(col_name);
 
-		if(word == ")")
-			break;
+            if (col_name == "primary") {
+                iss >> word;
+                utils::toLower(word);
+                if (word != "key")
+                    utils::invalidQuery(query);
+                iss >> word;
+                if (word != "(")
+                    utils::invalidQuery(query);
+                iss >> key;
+                //make this column primary key
+                m.appendKey(key);
+                iss >> word;
+                if (word != ")")
+                    utils::invalidQuery(query);
+                continue;
+            } else {
+                iss >> col_type;
+                if (col_type == "varchar") {
+                    iss >> word;
+                    if (word != "(")
+                        utils::invalidQuery(query);
+                    iss >> varchar_size;
+                    iss >> word;
+                    if (word != ")")
+                        utils::invalidQuery(query);
+                    col_type.append("(");
+                    col_type += "(" + varchar_size + ")";
+                }
+                Metadata::ColType c(col_type);
+                m.append(col_name, c, false);
+            }
+
+            iss >> word;
+            if (word != "," && word != ")")
+                utils::invalidQuery(query);
+
+            if (word == ")")
+                break;
+        }
     }
-    return;
 }
-
-
- 
-  
-// // Driver code 
-// int main() 
-// { 
-//     string query = "CREATE TABLE Persons(ID int, LastName varchar(255), FirstName varchar(255), Age int, PRIMARY KEY (ID));"; 
-//     create_table(query);
-//     return 0; 
-// } 

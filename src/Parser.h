@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include "utils.h"
+#include "sql_create.h"
 
 class Parser {
 private:

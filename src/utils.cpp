@@ -39,11 +39,11 @@ void utils::invalidQuery(std::string &query) {
 }
 
 std::string utils::getMetadataFileName(std::string &tableName) {
-    return tableName + ".mdata";
+    return DATABASE_FILE_PATH + "/" + tableName + ".mdata";
 }
 
 std::string utils::getDataFileName(std::string &tableName) {
-    return tableName + ".data";
+    return DATABASE_FILE_PATH + "/" + tableName + ".data";
 }
 
 bool utils::fileExists(std::string &filename) {

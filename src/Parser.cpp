@@ -5,7 +5,6 @@
 #include "Parser.h"
 
 Parser::Parser():type(INVALID){
-
 }
 
 void Parser::parse(std::string query) {
@@ -14,7 +13,7 @@ void Parser::parse(std::string query) {
     if (type == INVALID) {
         utils::invalidQuery(query);
     } else if (type == CREATE) {
-        // CreateClass.execute(query);
+        create::execute(query);
     } else if (type == ALTER) {
         // AlterClass.execute(query);
     } else if (type == DROP) {

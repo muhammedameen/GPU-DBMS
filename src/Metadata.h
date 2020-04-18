@@ -9,12 +9,13 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <map>
 
 #include "utils.h"
 
 class Metadata {
 public:
-    Metadata(std::string tableName);
+    explicit Metadata(std::string tableName);
 
     std::string getColName(int col);
 
@@ -42,9 +43,11 @@ public:
 
     ColType getColType(int col);
 
-    void append(std::string &colName, ColType &colType, bool isKey = false);
+    bool append(std::string &colName, ColType &colType, bool isKey = false);
 
     bool appendKey(std::string &keyName);
+
+    void invalidate();
 
     ~Metadata();
 
@@ -53,9 +56,12 @@ public:
     std::string tableName;
 
 private:
+    bool valid;
     std::vector<std::string> columns;
     std::vector<ColType> datatypes;
     std::vector<std::string> keyCols;
+    std::map<std::string, int> colMap;
+    std::map<std::string, int> keyMap;
 };
 
 
