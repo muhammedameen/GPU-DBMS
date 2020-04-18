@@ -49,7 +49,7 @@ public:
 
     void invalidate();
 
-    ~Metadata();
+    void commit();
 
     std::string metadataFileName;
     std::string dataFileName;
