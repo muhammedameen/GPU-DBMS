@@ -17,19 +17,7 @@ tokenizer::tokenizer(std::string &s) {
 }
 
 bool tokenizer::operator>>(std::string &s) {
-    if (query.empty())
-        return false;
-    s = utils::getFistWord(query);
-    if (s.empty())
-        return false;
-    int index = query.find(' ');
-    if (index != std::string::npos) {
-        query = query.substr(query.find(' '));
-        utils::trim(query);
-    } else {
-        query = "";
-    }
-    return true;
+    return nextToken(s);
 }
 
 

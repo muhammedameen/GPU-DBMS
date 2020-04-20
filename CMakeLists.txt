@@ -3,8 +3,30 @@ cmake_minimum_required(VERSION 3.13)
 project(dbase)
 
 set(CMAKE_CXX_STANDARD 14)
+
+file(GLOB parser_src_parser_source
+        "sql-parser/src/parser/*.h"
+        "sql-parser/src/parser/*.cpp"
+        )
+
+file(GLOB parser_src_sql_source
+        "sql-parser/src/sql/*.h"
+        "sql-parser/src/sql/*.cpp"
+        )
+
 add_executable(dbase src/main.cpp
         src/sql_create.cpp src/sql_create.h
         src/CLI.cpp src/CLI.h
         src/utils.cpp src/utils.h
-        src/Parser.cpp src/Parser.h src/Metadata.cpp src/Metadata.h src/sql_drop.cpp src/sql_drop.h src/tokenizer.cpp src/tokenizer.h)
+        src/Parser.cpp src/Parser.h
+        src/Metadata.cpp src/Metadata.h
+        src/sql_drop.cpp src/sql_drop.h
+        src/tokenizer.cpp src/tokenizer.h
+        src/sql_truncate.cpp src/sql_truncate.h
+        sql-parser/src/sqlhelper.cpp sql-parser/src/sqlhelper.h
+        sql-parser/src/SQLParser.cpp sql-parser/src/SQLParser.h
+        sql-parser/src/SQLParserResult.cpp sql-parser/src/SQLParserResult.h
+        ${parser_src_parser_source}
+        ${parser_src_sql_source}
+        )
+
