@@ -28,5 +28,5 @@ add_executable(dbase src/main.cpp
         sql-parser/src/SQLParserResult.cpp sql-parser/src/SQLParserResult.h
         ${parser_src_parser_source}
         ${parser_src_sql_source}
-        )
+        src/sql_select.cpp src/sql_select.h src/whereExpr.h)
 

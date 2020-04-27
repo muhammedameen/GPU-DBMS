@@ -8,8 +8,9 @@ Parser::Parser():type(INVALID){
 }
 
 void Parser::parse(std::string query) {
-    type = getQueryType(query);
     utils::toLower(query);
+    type = getQueryType(query);
+
     if (type == INVALID) {
         utils::invalidQuery(query);
     } else if (type == CREATE) {
@@ -23,7 +24,7 @@ void Parser::parse(std::string query) {
     } else if (type == INSERT) {
         // InsertClass.execute(query);
     } else if (type == SELECT) {
-        // SelectClass.execute(query);
+        sql_select::execute(query);
     } else if (type == UPDATE) {
         // UpdateClass.execute(query);
     } else if (type == DELETE) {
@@ -33,7 +34,6 @@ void Parser::parse(std::string query) {
 
 Parser::QUERY_TYPE Parser::getQueryType(std::string &query) {
     std::string word = utils::getFistWord(query);
-    utils::toLower(word);
     if(word == "create") {
         return CREATE;
     } else if (word == "alter") {
