@@ -412,7 +412,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childLeft, lres, ltype);
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
-            resType = RESTYPE_INT;
+            resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
             	float temp = 0;
                 float lhs, rhs;
@@ -437,6 +437,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = (lhs + rhs);
             	memcpy(res, &temp, sizeof(float));
             } else {
+                resType = RESTYPE_INT;
             	int temp;
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
@@ -445,7 +446,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             	memcpy(res, &temp, sizeof(int));
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -457,7 +457,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childLeft, lres, ltype);
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
-            resType = RESTYPE_INT;
+            resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
             	float temp = 0;
                 float lhs, rhs;
@@ -482,6 +482,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = (lhs - rhs);
             	memcpy(res, &temp, sizeof(float));
             } else {
+                resType = RESTYPE_INT;
             	int temp;
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
@@ -490,7 +491,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             	memcpy(res, &temp, sizeof(int));
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -502,7 +502,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childLeft, lres, ltype);
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
-            resType = RESTYPE_INT;
+            resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
             	float temp = 0;
                 float lhs, rhs;
@@ -526,7 +526,9 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(float));
                 temp = (lhs * rhs);
             	memcpy(res, &temp, sizeof(float));
+            	printf("Value : !!%f!!", temp);
             } else {
+                resType = RESTYPE_INT;
             	int temp;
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
@@ -535,7 +537,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             	memcpy(res, &temp, sizeof(int));
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -547,7 +548,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childLeft, lres, ltype);
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
-            resType = RESTYPE_INT;
+            resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
             	float temp = 0;
                 float lhs, rhs;
@@ -572,6 +573,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = (lhs / rhs);
             	memcpy(res, &temp, sizeof(float));
             } else {
+                resType = RESTYPE_INT;
             	int temp;
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
@@ -580,7 +582,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             	memcpy(res, &temp, sizeof(int));
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -619,7 +620,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -630,7 +630,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             int ltype = 0;
             eval(row, rowSize, offset, offsetSize, cols, types, exprArr, expr.childLeft, lres, ltype);
             res = malloc(sizeof(int));
-            resType = RESTYPE_INT;
+            resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT) {
             	float temp = 0;
                 float lhs;
@@ -638,6 +638,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = -lhs;
                 memcpy(res, &temp, sizeof(int));
             } else {
+                resType = RESTYPE_INT;
             	int temp;
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
@@ -645,7 +646,6 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(res, &temp, sizeof(int));
                 printf("lhs: %d, rhs: %d", lhs, rhs);
             }
-            printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             break;
