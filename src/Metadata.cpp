@@ -134,16 +134,16 @@ Metadata::ColType::ColType(std::string typeString) {
     str = typeString;
     if (typeString == "int") {
         type = TYPE_INT;
-        size = 32;
+        size = 4;
     } else if (typeString == "float") {
         type = TYPE_FLOAT;
-        size = 32;
+        size = 4;
     } else if (typeString == "boolean") {
         type = TYPE_BOOL;
         size = 1;
     } else if (typeString == "datetime") {
         type = TYPE_DATETIME;
-        size = 64;
+        size = 8;
     } else {
         if (typeString.length() < 10 || typeString[7] != '(' || typeString[typeString.length() - 1] != ')') {
             // :TODO SOME ERROR OCCURRED

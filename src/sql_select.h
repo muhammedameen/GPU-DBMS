@@ -7,7 +7,7 @@
 
 #include <string>
 
-
+#include "whereExpr.h"
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"
@@ -24,6 +24,9 @@ public:
     std::vector<std::string> columnNames;
     std::vector<std::string> tableNames;
 
+    static void exprToVec(hsql::Expr *pExpr, std::vector<whereExpr> &vector);
+
+    static whereExprType getOpType(hsql::Expr::OperatorType type, char opChar);
 };
 
 
