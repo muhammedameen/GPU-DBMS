@@ -1,34 +1,55 @@
 //
-// Created by ameen on 29/04/20.
+// Created by ameen on 30/04/20.
 //
-#include "data.h"
 
+#include "Data.h"
 Data::Data(std::string tableName) {
     this->tableName = tableName;
     mdata = Metadata(tableName);
     chunkSize = ((500 * 1000000)/(mdata.rowSize*1024)) * 1024;
+    readCount = 0;
     f.open(utils::getDataFileName(tableName), std::ios::binary);
-    f.seekg(0, std::ios::beg)
-    o.open(utils::getDataFileName(tableName), std::ios::binary);
-    return;
+    f.seekg(0, std::ios::beg);
+    o.open(utils::getTempFileName(tableName), std::ios::binary);
+}
+
+
+int Data::readRow(void *data) {
+    f.read(static_cast<char *>(data), mdata.rowSize);
+    return 0;
+}
+
+int Data::writeRow(void *data) {
+    o.write(static_cast<const char *>(data), mdata.rowSize);
+    return 0;
 }
 
 int Data::read (void *data){
-    int oldPos, currentPos;
-    oldPos = f.tellg();
-    //open the data file and read into the pointer
-    if(!f.read(data, chunkSize*mdata.rowSize)){
-        // we reached the end of file
-        int bytesLeft = f.gcount();
-        f.seekg(oldPos);
-        f.read(data, bytesLeft);
-        return bytesLeft;
+    if(readCount + chunkSize < mdata.rowCount){
+        f.read(static_cast<char *>(data), chunkSize * mdata.rowSize);
+        readCount += chunkSize;
+        return chunkSize;
     }
-    currentPos = f.tellg();
-    return currentPos - oldPos;
+    else if (readCount < mdata.rowCount){
+        f.read(static_cast<char *>(data), (mdata.rowCount - readCount) * mdata.rowSize);
+        int rowsRead = mdata.rowCount - readCount;
+        readCount = mdata.rowSize;
+        return rowsRead;
+    } else
+        return -1;
 }
 
 int Data::write(void *data, int numBytes){
-    data = (char *)malloc(chunkSize*mdata.rowSize);
-
+    if(!o.write((char *)data, numBytes))
+        return -1;
+    else
+        return numBytes;
 }
+
+Data::~Data() {
+//rename the temp file as data file
+    remove(utils::getDataFileName(tableName).c_str());
+    rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
+}
+
+

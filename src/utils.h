@@ -40,6 +40,8 @@ public:
 
     static std::string getDataFileName(std::string &tableName);
 
+    static std::string getTempFileName(std::string &tableName);
+
     static bool fileExists(std::string &filename);
 
     static void loadTables();

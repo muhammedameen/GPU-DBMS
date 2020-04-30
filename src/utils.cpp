@@ -52,6 +52,10 @@ std::string utils::getDataFileName(std::string &tableName) {
     return DATABASE_DIR + "/" + tableName + ".data";
 }
 
+std::string utils::getTempFileName(std::string &tableName) {
+    return DATABASE_DIR + "/" + tableName + ".temp";
+}
+
 bool utils::fileExists(std::string &filename) {
     if (FILE *file = fopen(filename.c_str(), "r")) {
         fclose(file);
@@ -111,6 +115,8 @@ void utils::writeDatabase() {
     }
     fout.close();
 }
+
+
 
 
 

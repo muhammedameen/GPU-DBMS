@@ -17,6 +17,8 @@ class Metadata {
 public:
     explicit Metadata(std::string tableName);
 
+    Metadata();
+
     std::string getColName(int col);
 
     std::string operator[] (int col);
@@ -54,6 +56,8 @@ public:
     std::string metadataFileName;
     std::string dataFileName;
     std::string tableName;
+    long rowSize;
+    long rowCount;
 
 private:
     bool valid;

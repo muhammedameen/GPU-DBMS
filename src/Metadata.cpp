@@ -14,6 +14,8 @@ Metadata::Metadata(std::string tableName) {
     datatypes = std::vector<ColType>();
     keyCols = std::vector<std::string>();
     colMap = std::map<std::string, int>();
+    rowSize = 0;
+    rowCount = 0;
     if (utils::fileExists(metadataFileName)) {
         std::ifstream metadataIn(metadataFileName);
         std::string line, val;
@@ -72,6 +74,7 @@ bool Metadata::append(std::string &colName, Metadata::ColType &colType, bool isK
         colMap[colName] = columns.size();
         columns.push_back(colName);
         datatypes.push_back(colType);
+        rowSize += colType.size;
         if (isKey && keyMap.find(colName) == keyMap.end()) {
             keyMap[colName] = keyCols.size();
             keyCols.push_back(colName);
@@ -120,6 +123,10 @@ void Metadata::invalidate() {
     datatypes.clear();
     keyCols.clear();
     keyMap.clear();
+}
+
+Metadata::Metadata() {
+    valid = false;
 }
 
 
