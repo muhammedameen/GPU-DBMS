@@ -86,7 +86,7 @@ void sql_select::execute(std::string &query) {
             std::vector<whereExpr> tree;
             auto expr = stmt->whereClause;
             exprToVec(expr, tree);
-
+            free(expr);
             // FOR DEBUGGING
             for (auto leaf : tree) {
                 printf("TYPE: %d, ival: %ld, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
@@ -110,7 +110,7 @@ void sql_select::execute(std::string &query) {
             int end[] = {4, 12, 16, 20};
             void *row = malloc(20 * sizeof(char));
             int r1 = 5;
-            char r2[] = "abcdefg";
+            char r2[8] = "ab";
             int r3 = 10;
             float r4 = 0.05f;
             memcpy((char *) row + start[0], &r1, end[0] - start[0]);
@@ -118,12 +118,13 @@ void sql_select::execute(std::string &query) {
             memcpy((char *) row + start[2], &r3, end[2] - start[2]);
             memcpy((char *) row + start[3], &r4, end[3] - start[3]);
 
-            Data a("persons");
-//            a.write(row, 20);
+            Data *a = new Data("persons");
+            // a.write(row, 20);
             free(row);
             row = malloc(20 * sizeof(char));
-            a.mdata.rowCount = 1;
-            a.read(row);
+            a->mdata.rowCount = 1;
+            a->read(row);
+
 
             // Revserse memcpy
             memcpy(&r1, (char *) row + start[0], end[0] - start[0]);
@@ -149,6 +150,7 @@ void sql_select::execute(std::string &query) {
                 result->errorLine(),
                 result->errorColumn());
     }
+    free(result);
 }
 
 void sql_select::exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector) {
