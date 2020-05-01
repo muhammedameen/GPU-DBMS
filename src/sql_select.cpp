@@ -108,7 +108,7 @@ void sql_select::execute(std::string &query) {
             int end[] = {4, 12, 16, 20};
             void *row = malloc(20 * sizeof(char));
             int r1 = 5;
-            char r2[] = "abcdef";
+            char r2[] = "abcdefg";
             int r3 = 10;
             float r4 = 0.05f;
             memcpy((char *) row + start[0], &r1, end[0] - start[0]);
@@ -122,6 +122,7 @@ void sql_select::execute(std::string &query) {
             row = malloc(20 * sizeof(char));
             a.mdata.rowCount = 1;
             a.read(row);
+
             // Revserse memcpy
             memcpy(&r1, (char *) row + start[0], end[0] - start[0]);
             memcpy(r2, (char *) row + start[1], end[1] - start[1]);

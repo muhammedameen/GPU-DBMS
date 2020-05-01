@@ -56,7 +56,7 @@ public:
     std::string metadataFileName;
     std::string dataFileName;
     std::string tableName;
-    long rowSize;
+    int rowSize;
     long rowCount;
 
 private:

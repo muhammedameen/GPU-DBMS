@@ -34,7 +34,6 @@ private:
     std::ofstream o;
     // no of rows dealt as a chunk
     int chunkSize;
-
 };
 
 

@@ -163,6 +163,7 @@ Metadata::ColType::ColType(std::string typeString) {
                 type = TYPE_VARCHAR;
                 std::stringstream val(typeString.substr(8, typeString.length()));
                 val >> size;
+                ++size;
             }
         }
     }
