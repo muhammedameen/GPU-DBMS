@@ -40,6 +40,7 @@ int Data::read (void *data){
 }
 
 int Data::write(void *data, int numBytes){
+    writeHappened = true;
     if(!o.write((char *)data, numBytes))
         return -1;
     else
@@ -48,8 +49,11 @@ int Data::write(void *data, int numBytes){
 
 Data::~Data() {
 //rename the temp file as data file
-    remove(utils::getDataFileName(tableName).c_str());
-    rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
+    if(writeHappened){
+        remove(utils::getDataFileName(tableName).c_str());
+        rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
+    }
+
 }
 
 

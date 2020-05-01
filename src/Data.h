@@ -28,6 +28,7 @@ public:
 
     Metadata mdata;
 private:
+    bool writeHappened;
     std::string tableName;
     std::ifstream f;
     std::ofstream o;

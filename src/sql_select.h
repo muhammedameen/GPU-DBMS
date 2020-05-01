@@ -9,6 +9,8 @@
 
 #include "whereExpr.h"
 #include "Data.h"
+#include "deviceUtil.h"
+#include "Metadata.h"
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"

@@ -3,8 +3,7 @@
 //
 
 #include "sql_select.h"
-#include "deviceUtil.h"
-#include "Metadata.h"
+
 
 void sql_select::execute(std::string &query) {
     sql_select obj(query);
@@ -109,7 +108,7 @@ void sql_select::execute(std::string &query) {
             int end[] = {4, 12, 16, 20};
             void *row = malloc(20 * sizeof(char));
             int r1 = 5;
-            char r2[] = "abcdefg";
+            char r2[] = "abcdef";
             int r3 = 10;
             float r4 = 0.05f;
             memcpy((char *) row + start[0], &r1, end[0] - start[0]);
