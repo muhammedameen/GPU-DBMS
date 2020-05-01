@@ -8,6 +8,7 @@
 #include <string>
 
 #include "whereExpr.h"
+#include "Data.h"
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"

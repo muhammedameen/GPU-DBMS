@@ -116,7 +116,13 @@ void sql_select::execute(std::string &query) {
             memcpy((char *) row + start[1], r2, end[1] - start[1]);
             memcpy((char *) row + start[2], &r3, end[2] - start[2]);
             memcpy((char *) row + start[3], &r4, end[3] - start[3]);
-            // Reverse memcpy
+
+            Data a("persons");
+//            a.write(row, 20);
+            free(row);
+            row = malloc(20 * sizeof(char));
+            a.read(row);
+            // Revserse memcpy
             memcpy(&r1, (char *) row + start[0], end[0] - start[0]);
             memcpy(r2, (char *) row + start[1], end[1] - start[1]);
             memcpy(&r3, (char *) row + start[2], end[2] - start[2]);

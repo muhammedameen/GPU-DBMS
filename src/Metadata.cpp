@@ -32,6 +32,7 @@ Metadata::Metadata(std::string tableName) {
         iss = std::istringstream(line);
         while (iss >> val) {
             ColType temp(val);
+            rowSize += temp.size;
             datatypes.push_back(temp);
         }
         // Read key columns
