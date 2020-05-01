@@ -121,6 +121,7 @@ void sql_select::execute(std::string &query) {
 //            a.write(row, 20);
             free(row);
             row = malloc(20 * sizeof(char));
+            a.mdata.rowCount = 1;
             a.read(row);
             // Revserse memcpy
             memcpy(&r1, (char *) row + start[0], end[0] - start[0]);

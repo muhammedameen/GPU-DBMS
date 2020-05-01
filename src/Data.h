@@ -23,16 +23,17 @@ public:
     int readRow(void *data);
     int writeRow(void *data);
     int write(void *data, int numBytes);
+    long readCount;
     ~Data();
+
+    Metadata mdata;
 private:
     std::string tableName;
-    Metadata mdata;
-    FILE *filePointer;
     std::ifstream f;
     std::ofstream o;
     // no of rows dealt as a chunk
     int chunkSize;
-    long readCount;
+
 };
 
 
