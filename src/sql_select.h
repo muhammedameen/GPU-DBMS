@@ -18,14 +18,7 @@
 
 class sql_select {
 public:
-    explicit sql_select(std::string &query);
-
     static void execute(std::string &query);
-
-    hsql::SQLParserResult *result;
-
-    std::vector<std::string> columnNames;
-    std::vector<std::string> tableNames;
 
     static void exprToVec(hsql::Expr *pExpr, std::vector<whereExpr> &vector);
 

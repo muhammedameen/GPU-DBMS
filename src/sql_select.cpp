@@ -6,38 +6,40 @@
 
 
 void sql_select::execute(std::string &query) {
-    sql_select obj(query);
-    if(obj.result->isValid()){
-        // printf("Parsed successfully!\n");
-        // printf("Number of statements: %lu\n", obj.result->size());
-        // for (uint i = 0; i < obj.result->size(); ++i) {
-        //     // Print a statement summary.
-        //     hsql::printStatementInfo(obj.result->getStatement(i));
-        // }
-        const auto *stmt = (const hsql::SelectStatement *) obj.result->getStatement(0);
-        hsql::printSelectStatementInfo(stmt, 1);
+
+    hsql::SQLParserResult *result;
+    std::vector<std::string> columnNames;
+    std::vector<std::string> tableNames;
+
+    result = hsql::SQLParser::parseSQLString(query);
+    columnNames = std::vector<std::string>();
+    tableNames = std::vector<std::string>();
+
+    if(result->isValid()){
+        const auto *stmt = (const hsql::SelectStatement *) result->getStatement(0);
+        // hsql::printSelectStatementInfo(stmt, 1);
         // Get column names
         for (hsql::Expr* expr : *stmt->selectList){
             switch (expr->type) {
                 case hsql::kExprStar:
-                    obj.columnNames.emplace_back("*");
+                    columnNames.emplace_back("*");
                     // inprint("*", numIndent);
                     break;
                 case hsql::kExprColumnRef:
-                    obj.columnNames.emplace_back(expr->name);
+                    columnNames.emplace_back(expr->name);
                     // inprint(expr->name, numIndent);
                     break;
                     // case kExprTableColumnRef: inprint(expr->table, expr->name, numIndent); break;
                 case hsql::kExprLiteralFloat:
-                    obj.columnNames.push_back(std::to_string(expr->fval));
+                    columnNames.push_back(std::to_string(expr->fval));
                     // inprint(expr->fval, numIndent);
                     break;
                 case hsql::kExprLiteralInt:
-                    obj.columnNames.push_back(std::to_string(expr->ival));
+                    columnNames.push_back(std::to_string(expr->ival));
                     // inprint(expr->ival, numIndent);
                     break;
                 case hsql::kExprLiteralString:
-                    obj.columnNames.emplace_back(expr->name);
+                    columnNames.emplace_back(expr->name);
                     // inprint(expr->name, numIndent);
                     break;
                 // TODO: kExprFunctionRef (Distinct ?), kExprOperator (col1 + col2 ?)
@@ -58,7 +60,7 @@ void sql_select::execute(std::string &query) {
         switch (table->type) {
             case hsql::kTableName:
                 // inprint(table->name, numIndent);
-                obj.tableNames.emplace_back(table->name);
+                tableNames.emplace_back(table->name);
                 break;
             // case hsql::kTableSelect:
             //     // printSelectStatementInfo(table->select, numIndent);
@@ -94,7 +96,7 @@ void sql_select::execute(std::string &query) {
             // GET ROWS SATISFYING WHERE
             // Data data(obj.tableNames[0], obj.columnNames);
             int rowSise = 0;
-            int numCols = obj.columnNames.size();
+            int numCols = columnNames.size();
             // rowSize = data.getRowSize();
             // int *offsets = data.getOffset();
             void *dataPtr = malloc(rowSise);
@@ -143,16 +145,10 @@ void sql_select::execute(std::string &query) {
     } else {
         fprintf(stderr, "Given string is not a valid SQL query.\n");
         fprintf(stderr, "%s (L%d:%d)\n",
-                obj.result->errorMsg(),
-                obj.result->errorLine(),
-                obj.result->errorColumn());
+                result->errorMsg(),
+                result->errorLine(),
+                result->errorColumn());
     }
-}
-
-sql_select::sql_select(std::string &query) {
-    result = hsql::SQLParser::parseSQLString(query);
-    columnNames = std::vector<std::string>();
-    tableNames = std::vector<std::string>();
 }
 
 void sql_select::exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector) {

@@ -9,15 +9,15 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
     auto expr = exprArr[currPos];
     switch (expr.type) {
         case CONSTANT_ERR:
-            printf("ERROR NOT SUPPORTED YET\n");
+            // printf("ERROR NOT SUPPORTED YET\n");
             break;
         case CONSTANT_INT:
-            printf("INT_VAL\n");
+            // printf("INT_VAL\n");
             fflush(stdout);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             memcpy(res, &expr.iVal, sizeof(int));
-            printf("val: %d\n", *((int *) res));
+            // printf("val: %d\n", *((int *) res));
             break;
         case CONSTANT_FLT:
             res = malloc(sizeof(float));
@@ -30,13 +30,13 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
             memcpy(res, &expr.sVal, strlen(expr.sVal) + 1);
             break;
         case COL_NAME:
-            printf("COL_NAME\n");
+            // printf("COL_NAME\n");
             fflush(stdout);
             for (int i = 0; i < offsetSize; i++) {
-                printf("cols[i] : %s\n", cols[i]);
+                // printf("cols[i] : %s\n", cols[i]);
                 fflush(stdout);
                 if (strncmp(cols[i], expr.sVal, sizeof(expr.sVal)) == 0) {
-                    printf("Col Name: %s\n", expr.sVal);
+                    // printf("Col Name: %s\n", expr.sVal);
                     fflush(stdout);
                     int start = offset[i];
                     int end = offset[i + 1];
@@ -52,7 +52,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                             memcpy(res, (char *) row + start, sizeof(float));
                             break;
                         case Metadata::TYPE_BOOL:
-                            printf("Not yet implemented\n");
+                            // printf("Not yet implemented\n");
                             break;
                         case Metadata::TYPE_VARCHAR:
                             res = malloc(end - start);
@@ -60,16 +60,16 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                             memcpy(res, (char *) row + start, end - start);
                             break;
                         case Metadata::TYPE_DATETIME:
-                            printf("Not yet implemented 2\n");
+                            // printf("Not yet implemented 2\n");
                             break;
                         case Metadata::TYPE_INVALID:
-                            printf("INVALID TYPE!\n");
+                            // printf("INVALID TYPE!\n");
                             break;
                     }
                     break;
                 }
                 if (i == offsetSize - 1) {
-                    printf("No such column\n");
+                    // printf("No such column\n");
                 }
             }
             break;
@@ -105,7 +105,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = lhs && rhs;
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE AND %d\n", temp);
+            // printf("INSIDE AND %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -143,7 +143,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 temp = lhs || rhs;
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE AND %d\n", temp);
+            // printf("INSIDE AND %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -164,10 +164,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 int lhs, rhs;
                 memcpy(&lhs, lres, sizeof(int));
                 temp = !lhs;
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             break;
@@ -202,10 +202,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = lhs == rhs;
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -241,10 +241,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs != rhs);
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -280,10 +280,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs >= rhs);
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -319,10 +319,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs <= rhs);
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -358,10 +358,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs > rhs);
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -397,10 +397,10 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs < rhs);
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
-            printf("INSIDE = %d\n", temp);
+            // printf("INSIDE = %d\n", temp);
             fflush(stdout);
             free(lres);
             free(rres);
@@ -444,7 +444,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs + rhs);
             	memcpy(res, &temp, sizeof(int));
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             fflush(stdout);
             free(lres);
@@ -489,7 +489,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs - rhs);
             	memcpy(res, &temp, sizeof(int));
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             fflush(stdout);
             free(lres);
@@ -526,7 +526,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(float));
                 temp = (lhs * rhs);
             	memcpy(res, &temp, sizeof(float));
-            	printf("Value : !!%f!!", temp);
+            	// printf("Value : !!%f!!", temp);
             } else {
                 resType = RESTYPE_INT;
             	int temp;
@@ -535,7 +535,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs * rhs);
             	memcpy(res, &temp, sizeof(int));
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             fflush(stdout);
             free(lres);
@@ -580,7 +580,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&rhs, rres, sizeof(int));
                 temp = (lhs / rhs);
             	memcpy(res, &temp, sizeof(int));
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             fflush(stdout);
             free(lres);
@@ -617,7 +617,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 memcpy(&rhs, rres, sizeof(int));
                 temp = lhs % rhs;
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             memcpy(res, &temp, sizeof(int));
             fflush(stdout);
@@ -644,7 +644,7 @@ void eval(void *row, int rowSize, const int *offset, int offsetSize, char **cols
                 memcpy(&lhs, lres, sizeof(int));
                 temp = -lhs;
                 memcpy(res, &temp, sizeof(int));
-                printf("lhs: %d, rhs: %d", lhs, rhs);
+                // printf("lhs: %d, rhs: %d", lhs, rhs);
             }
             fflush(stdout);
             free(lres);

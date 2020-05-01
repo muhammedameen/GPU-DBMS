@@ -25,7 +25,6 @@ public:
     int write(void *data, int numBytes);
     long readCount;
     ~Data();
-
     Metadata mdata;
 private:
     bool writeHappened;
