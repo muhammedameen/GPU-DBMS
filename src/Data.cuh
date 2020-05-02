@@ -26,13 +26,13 @@ public:
     long readCount;
     ~Data();
     Metadata mdata;
+    // no of rows dealt as a chunk
+    int chunkSize;
 private:
     bool writeHappened;
     std::string tableName;
     std::ifstream f;
     std::ofstream o;
-    // no of rows dealt as a chunk
-    int chunkSize;
 };
 
 

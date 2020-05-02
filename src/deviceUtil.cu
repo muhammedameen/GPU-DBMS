@@ -4,7 +4,7 @@
 
 #include "deviceUtil.cuh"
 
-__device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, const char *cols, const int *colStart, Metadata::ColType types[],
+__device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, ColType types[],
                      whereExpr *exprArr, int currPos,
                      void *&res, int &resType) {
     auto expr = exprArr[currPos];
@@ -32,55 +32,43 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
             memcpy(res, &expr.sVal, len + 1);
             break;
         }
-        case COL_NAME:
-            // printf("COL_NAME\n");
-            // fflush(stdout);
-            for (int i = 0; i < offsetSize; i++) {
-                // printf("cols[i] : %s\n", cols[i]);
-                // fflush(stdout);
-                if (myStrncmp(&cols[colStart[i]], expr.sVal, sizeof(expr.sVal)) == 0) {
-                    // printf("Col Name: %s\n", expr.sVal);
-                    // fflush(stdout);
-                    int start = offset[i];
-                    int end = offset[i + 1];
-                    switch (types[i].type) {
-                        case Metadata::TYPE_INT:
-                            res = malloc(sizeof(int));
-                            resType = RESTYPE_INT;
-                            memcpy(res, (char *) row + start, sizeof(int));
-                            break;
-                        case Metadata::TYPE_FLOAT:
-                            res = malloc(sizeof(float));
-                            resType = RESTYPE_FLT;
-                            memcpy(res, (char *) row + start, sizeof(float));
-                            break;
-                        case Metadata::TYPE_BOOL:
-                            // printf("Not yet implemented\n");
-                            break;
-                        case Metadata::TYPE_VARCHAR:
-                            res = malloc(end - start);
-                            resType = -(end - start + 1);
-                            memcpy(res, (char *) row + start, end - start);
-                            break;
-                        case Metadata::TYPE_DATETIME:
-                            // printf("Not yet implemented 2\n");
-                            break;
-                        case Metadata::TYPE_INVALID:
-                            // printf("INVALID TYPE!\n");
-                            break;
-                    }
+        case COL_NAME: {
+            int i = expr.iVal;
+            int start = offset[i];
+            int end = offset[i + 1];
+            switch (types[i].type) {
+                case TYPE_INT:
+                    res = malloc(sizeof(int));
+                    resType = RESTYPE_INT;
+                    memcpy(res, (char *) row + start, sizeof(int));
                     break;
-                }
-                if (i == offsetSize - 1) {
-                    // printf("No such column\n");
-                }
+                case TYPE_FLOAT:
+                    res = malloc(sizeof(float));
+                    resType = RESTYPE_FLT;
+                    memcpy(res, (char *) row + start, sizeof(float));
+                    break;
+                case TYPE_BOOL:
+                    printf("Not yet implemented\n");
+                    break;
+                case TYPE_VARCHAR:
+                    res = malloc(end - start);
+                    resType = -(end - start + 1);
+                    memcpy(res, (char *) row + start, end - start);
+                    break;
+                case TYPE_DATETIME:
+                    printf("Not yet implemented 2\n");
+                    break;
+                case TYPE_INVALID:
+                    printf("INVALID TYPE!\n");
+                    break;
             }
             break;
+        }
         case OPERATOR_AND: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -117,8 +105,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_OR: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -155,7 +143,7 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_NOT: {
             void *lres;
             int ltype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -178,8 +166,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_EQ: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -217,8 +205,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_NE: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -256,8 +244,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_GE: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);;
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);;
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -295,8 +283,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_LE: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);;
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);;
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -334,8 +322,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_GT: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);;
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);;
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -373,8 +361,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_LT: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);;
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);;
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -412,8 +400,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_PL: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);;
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);;
             res = malloc(sizeof(int));
             resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
@@ -457,8 +445,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_MI: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
@@ -502,8 +490,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_MU: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
@@ -548,8 +536,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_DI: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
@@ -593,8 +581,8 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_MO: {
             void *lres, *rres;
             int ltype = 0, rtype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childRight, rres, rtype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childRight, rres, rtype);
             res = malloc(sizeof(int));
             resType = RESTYPE_INT;
             int temp = 0;
@@ -631,7 +619,7 @@ __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, 
         case OPERATOR_UMI: {
             void *lres;
             int ltype = 0;
-            eval(row, rowSize, offset, offsetSize, cols, colStart, types, exprArr, expr.childLeft, lres, ltype);
+            eval(row, rowSize, offset, offsetSize, types, exprArr, expr.childLeft, lres, ltype);
             res = malloc(sizeof(int));
             resType = RESTYPE_FLT;
             if (ltype == RESTYPE_FLT) {

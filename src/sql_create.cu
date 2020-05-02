@@ -83,7 +83,7 @@ namespace create {
                         invalidQuery(query);
                     col_type += "(" + varchar_size + ")";
                 }
-                Metadata::ColType c(col_type);
+                ColType c = newColType(col_type);
                 m.append(col_name, c, false);
             }
 

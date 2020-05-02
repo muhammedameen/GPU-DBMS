@@ -4,6 +4,18 @@
 
 #include "sql_select.cuh"
 
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs) {
+    void *res;
+    int resType = 0;
+    eval(data, rowSize, offset, offsetSize, types, exprs, 0, res, resType);
+    if (resType == RESTYPE_INT) {
+        int *x = (int *) res;
+        printf("Value of expression is : %d\n", *x);
+    } else {
+        printf("Res Type is : %d", resType);
+    }
+}
+
 void sql_select::execute(std::string &query) {
 
     hsql::SQLParserResult *result;
@@ -80,85 +92,110 @@ void sql_select::execute(std::string &query) {
         if (stmt->whereClause != nullptr) {
             // Get where
             std::vector<whereExpr> tree;
+            printf("%s\n", tableNames[0].c_str());
+            Data d(tableNames[0]);
+
             auto expr = stmt->whereClause;
-            exprToVec(expr, tree);
+            exprToVec(expr, tree, d.mdata.columns);
             free(expr);
+
+            int rowSize = d.mdata.rowSize;
+            void *data = malloc(d.chunkSize);
+            void *data_d;
+            int numCols = d.mdata.columns.size();
+            ColType *type_d;
+            cudaMalloc(&type_d, sizeof(ColType) * numCols);
+            cudaMemcpy(type_d, &d.mdata.datatypes[0], sizeof(ColType) * numCols, cudaMemcpyHostToDevice);
+            whereExpr *where_d;
+            cudaMalloc(&where_d, sizeof(whereExpr) * tree.size());
+            cudaMemcpy(where_d, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
+            int *offsets = (int *) malloc(sizeof(int) * (numCols + 1));
+            offsets[0] = d.mdata.datatypes[0].size;
+            for (int i = 1; i <= numCols; i++) {
+                offsets[i] = offsets[i - 1] + d.mdata.datatypes[i].size;
+            }
+            int *offsets_d;
+            cudaMalloc(&offsets_d, sizeof(int) * (numCols + 1));
+            cudaMemcpy(offsets_d, offsets, sizeof(int) * (numCols + 1), cudaMemcpyHostToDevice);
+            int numRows = d.read(data);
+
+            while (numRows > 0) {
+                printf("Inside\n");
+                fflush(stdout);
+                cudaMalloc(&data_d, rowSize * numRows);
+                cudaMemcpy(data_d, data, rowSize * numRows, cudaMemcpyHostToDevice);
+                selectKernel<<<1, 512>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d);
+                cudaDeviceSynchronize();
+                cudaError_t err = cudaGetLastError();
+                printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+                numRows = d.read(data);
+            }
+
             // FOR DEBUGGING
             // for (auto leaf : tree) {
-            //     printf("TYPE: %d, ival: %ld, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+            //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
             //            leaf.sVal, leaf.childLeft, leaf.childRight);
             // }
 
-            // GET ROWS SATISFYING WHERE
-            // Data data(obj.tableNames[0], obj.columnNames);
-            int rowSise = 0;
-            int numCols = columnNames.size();
-            // rowSize = data.getRowSize();
-            // int *offsets = data.getOffset();
-            void *dataPtr = malloc(rowSise);
-            // int numRows = data.getDataChunked(dataPtr);
-
             // TEST EVAL
-            // char colNames[][20] = {"r1", "r2", "r3", "r4"};
-            const char *colNames[] = {"r1", "r2", "r3", "r4"};
-            Metadata::ColType type[] = {Metadata::ColType("int"), Metadata::ColType("varchar(7)"), Metadata::ColType("int"), Metadata::ColType("float")};
-            int start[] = {0, 4, 12, 16, 20};
-            int end[] = {4, 12, 16, 20};
-            void *row = malloc(20 * sizeof(char));
-            int r1 = 5;
-            char r2[8] = "ab";
-            int r3 = 10;
-            float r4 = 0.05f;
-            memcpy((char *) row + start[0], &r1, end[0] - start[0]);
-            memcpy((char *) row + start[1], r2, end[1] - start[1]);
-            memcpy((char *) row + start[2], &r3, end[2] - start[2]);
-            memcpy((char *) row + start[3], &r4, end[3] - start[3]);
-
-            Data *a = new Data("persons");
-            // a.write(row, 20);
-            free(row);
-            row = malloc(20 * sizeof(char));
-            a->mdata.rowCount = 1;
-            a->read(row);
-
-
-            // Revserse memcpy
-            memcpy(&r1, (char *) row + start[0], end[0] - start[0]);
-            memcpy(r2, (char *) row + start[1], end[1] - start[1]);
-            memcpy(&r3, (char *) row + start[2], end[2] - start[2]);
-            memcpy(&r4, (char *) row + start[3], end[3] - start[3]);
-            printf("R1: %d, R2: %s, R3:%d, R4:%f\n", r1, r2, r3, r4);
-
-            void *row_d;
-            cudaMalloc(&row_d, 20);
-            cudaMemcpy(row_d, row, 20, cudaMemcpyHostToDevice);
-
-            int *offset_d;
-            cudaMalloc(&offset_d, 5 * sizeof(int));
-            cudaMemcpy(offset_d, start, 5 * sizeof(int), cudaMemcpyHostToDevice);
-
-            char *colNames_d;
-            int *colPos_d;
-            cudaMalloc(&colNames_d, sizeof(char *) * 4 * 100);
-            cudaMalloc(&colPos_d, sizeof(int *) * 4 * 51);
-            int colPos = 0;
-            for (int i = 0; i < 4; i++) {
-                cudaMemcpy(colNames_d + 3 * i, colNames[i], sizeof(char) * 3, cudaMemcpyHostToDevice);
-                cudaMemcpy(colPos_d, &colPos, sizeof(int), cudaMemcpyDeviceToHost);
-                colPos += 3;
-            }
-
-            Metadata::ColType *types_d;
-            cudaMalloc(&types_d, sizeof(Metadata::ColType) * 4);
-            cudaMemcpy(types_d, type, sizeof(Metadata::ColType) * 4, cudaMemcpyHostToDevice);
-
-            whereExpr *whereClause;
-            cudaMalloc(&whereClause, sizeof(whereExpr) * tree.size());
-            cudaMemcpy(whereClause, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
+            // ColType type[] = {newColType("int"), newColType("varchar(7)"), newColType("int"), newColType("float")};
+            // int start[] = {0, 4, 12, 16, 20};
+            // int end[] = {4, 12, 16, 20};
+            // void *row = malloc(20 * sizeof(char));
+            // int r1 = 5;
+            // char r2[8] = "ab";
+            // int r3 = 10;
+            // float r4 = 0.05f;
+            // memcpy((char *) row + start[0], &r1, end[0] - start[0]);
+            // memcpy((char *) row + start[1], r2, end[1] - start[1]);
+            // memcpy((char *) row + start[2], &r3, end[2] - start[2]);
+            // memcpy((char *) row + start[3], &r4, end[3] - start[3]);
+            //
+            // Data *a = new Data("persons");
+            // // a.write(row, 20);
+            // free(row);
+            // row = malloc(20 * sizeof(char));
+            // a->mdata.rowCount = 1;
+            // a->read(row);
+            //
+            //
+            // // Revserse memcpy
+            // memcpy(&r1, (char *) row + start[0], end[0] - start[0]);
+            // memcpy(r2, (char *) row + start[1], end[1] - start[1]);
+            // memcpy(&r3, (char *) row + start[2], end[2] - start[2]);
+            // memcpy(&r4, (char *) row + start[3], end[3] - start[3]);
+            // printf("R1: %d, R2: %s, R3:%d, R4:%f\n", r1, r2, r3, r4);
+            //
+            // void *row_d;
+            // cudaMalloc(&row_d, 20);
+            // cudaMemcpy(row_d, row, 20, cudaMemcpyHostToDevice);
+            //
+            // int *offset_d;
+            // cudaMalloc(&offset_d, 5 * sizeof(int));
+            // cudaMemcpy(offset_d, start, 5 * sizeof(int), cudaMemcpyHostToDevice);
+            //
+            // char *colNames_d;
+            // int *colPos_d;
+            // cudaMalloc(&colNames_d, sizeof(char *) * 4 * 100);
+            // cudaMalloc(&colPos_d, sizeof(int) * 4);
+            // int colPos[] = {0, 3, 6, 9};
+            // for (int i = 0; i < 4; i++) {
+            //     cudaMemcpy(colNames_d + 3 * i, colNames[i], sizeof(char) * 3, cudaMemcpyHostToDevice);
+            // }
+            // cudaMemcpy(colPos_d, colPos, sizeof(int) * 4, cudaMemcpyHostToDevice);
+            //
+            // ColType *types_d;
+            // cudaMalloc(&types_d, sizeof(ColType) * 4);
+            // cudaMemcpy(types_d, type, sizeof(ColType) * 4, cudaMemcpyHostToDevice);
+            //
+            // whereExpr *whereClause;
+            // cudaMalloc(&whereClause, sizeof(whereExpr) * tree.size());
+            // cudaMemcpy(whereClause, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
 
             // selectKernel<<<1, 1>>>(row, 20, offset_d, 4, colNames_d, colPos_d, types_d, whereClause);
-            cudaDeviceSynchronize();
-
+            // cudaDeviceSynchronize();
+            // cudaError_t err = cudaGetLastError();
+            // printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
             // eval(row, 20, start, 4, colNames, type, &tree[0], 0, res, resType);
             // if (resType == RESTYPE_INT) {
             //     int *x = (int *) res;
@@ -176,103 +213,4 @@ void sql_select::execute(std::string &query) {
                 result->errorColumn());
     }
     free(result);
-}
-
-void sql_select::exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector) {
-    switch (expr->type) {
-        case hsql::kExprLiteralFloat:
-            vector.push_back(*newExpr(CONSTANT_FLT, expr->fval));
-            break;
-        case hsql::kExprLiteralString:
-            vector.push_back(*newExpr(CONSTANT_STR, expr->name));
-            break;
-        case hsql::kExprLiteralInt:
-            vector.push_back(*newExpr(CONSTANT_INT, expr->ival));
-            break;
-        case hsql::kExprStar:
-            printf("Why is there a `*` here?");
-            break;
-        case hsql::kExprPlaceholder:
-            printf("What is this?");
-            break;
-        case hsql::kExprColumnRef:
-            vector.push_back(*newExpr(COL_NAME, expr->name));
-            break;
-        case hsql::kExprFunctionRef:
-            printf("What is this 2 Electric Boogaloo");
-            break;
-        case hsql::kExprOperator: {
-            whereExpr *temp = newExpr(getOpType(expr->opType, expr->opChar));
-            vector.push_back(*temp);
-            int curr = vector.size() - 1;
-            vector[curr].childLeft = vector.size();
-            exprToVec(expr->expr, vector);
-            if (expr->expr2 != nullptr) {
-                vector[curr].childRight = vector.size();
-                exprToVec(expr->expr2, vector);
-            }
-            break;
-        }
-        case hsql::kExprSelect:
-            printf("Not yet implemented");
-            break;
-    }
-}
-
-whereExprType sql_select::getOpType(hsql::Expr::OperatorType type, char opChar) {
-    // TODO: Change Error to correct Constants
-    switch (type) {
-        case hsql::Expr::NONE:
-            return CONSTANT_ERR;
-        case hsql::Expr::BETWEEN:
-            return CONSTANT_ERR;
-        case hsql::Expr::CASE:
-            return CONSTANT_ERR;
-        case hsql::Expr::SIMPLE_OP:
-            switch (opChar) {
-                case '+':
-                    return OPERATOR_PL;
-                case '-':
-                    return OPERATOR_MI;
-                case '*':
-                    return OPERATOR_MU;
-                case '/':
-                    return OPERATOR_DI;
-                case '%':
-                    return OPERATOR_MO;
-                case '=':
-                    return OPERATOR_EQ;
-                case '<':
-                    return OPERATOR_LT;
-                case '>':
-                    return OPERATOR_GT;
-                default:
-                    return CONSTANT_ERR;
-            }
-        case hsql::Expr::NOT_EQUALS:
-            return OPERATOR_NE;
-        case hsql::Expr::LESS_EQ:
-            return OPERATOR_LE;
-        case hsql::Expr::GREATER_EQ:
-            return OPERATOR_GE;
-        case hsql::Expr::LIKE:
-            return CONSTANT_ERR;
-        case hsql::Expr::NOT_LIKE:
-            return CONSTANT_ERR;
-        case hsql::Expr::AND:
-            return OPERATOR_AND;
-        case hsql::Expr::OR:
-            return OPERATOR_OR;
-        case hsql::Expr::IN:
-            return CONSTANT_ERR;
-        case hsql::Expr::NOT:
-            return OPERATOR_NOT;
-        case hsql::Expr::UMINUS:
-            return OPERATOR_UMI;
-        case hsql::Expr::ISNULL:
-            return CONSTANT_ERR;
-        case hsql::Expr::EXISTS:
-            return CONSTANT_ERR;
-    }
-    return CONSTANT_ERR;
 }

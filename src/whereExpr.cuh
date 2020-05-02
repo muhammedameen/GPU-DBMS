@@ -7,6 +7,7 @@
 
 #include <cstring>
 #include <cstdlib>
+#include "../sql-parser/src/sql/Expr.h"
 
 enum whereExprType{
     CONSTANT_ERR,
@@ -35,7 +36,7 @@ typedef struct {
     whereExprType type;
     int iVal;
     float fVal;
-    char *sVal;
+    char sVal[10];
     int childLeft;
     int childRight;
 } whereExpr;
@@ -49,5 +50,10 @@ whereExpr *newExpr(whereExprType type, char *sVal);
 whereExpr *newExpr(whereExprType type);
 
 void freeExpr(whereExpr *expr);
+
+void exprToVec(hsql::Expr *pExpr, std::vector<whereExpr> &vector, const std::vector<std::string>& colNames);
+
+whereExprType getOpType(hsql::Expr::OperatorType type, char opChar);
+
 
 #endif //DBASE_WHEREEXPR_CUH

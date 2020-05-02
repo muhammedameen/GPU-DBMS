@@ -12,6 +12,7 @@
 #include <map>
 
 #include "utils.cuh"
+#include "ColType.cuh"
 
 class Metadata {
 public:
@@ -22,28 +23,6 @@ public:
     std::string getColName(int col);
 
     std::string operator[] (int col);
-
-    enum DATATYPE {
-        TYPE_INT,
-        TYPE_FLOAT,
-        TYPE_BOOL,
-        TYPE_VARCHAR,
-        TYPE_DATETIME,
-        TYPE_INVALID
-    };
-
-    class ColType{
-    public:
-        DATATYPE type;
-        int size;
-        std::string str;
-        ColType();
-        explicit ColType(std::string typeString);
-    };
-
-    ColType getColType(std::string &colName);
-
-    ColType getColType(int col);
 
     bool append(std::string &colName, ColType &colType, bool isKey = false);
 
@@ -59,10 +38,14 @@ public:
     int rowSize;
     long rowCount;
 
-private:
-    bool valid;
+    ColType getColType(std::string &colName);
+
+    ColType getColType(int col);
+
     std::vector<std::string> columns;
     std::vector<ColType> datatypes;
+private:
+    bool valid;
     std::vector<std::string> keyCols;
     std::map<std::string, int> colMap;
     std::map<std::string, int> keyMap;

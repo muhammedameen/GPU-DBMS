@@ -11,6 +11,8 @@
 #include "Data.cuh"
 #include "deviceUtil.cuh"
 #include "Metadata.cuh"
+#include "ColType.cuh"
+
 // #include "cudaOps.cuh"
 
 #include "../sql-parser/src/SQLParserResult.h"
@@ -22,8 +24,7 @@ class sql_select {
 public:
     static void execute(std::string &query);
 
-    static void exprToVec(hsql::Expr *pExpr, std::vector<whereExpr> &vector);
-
-    static whereExprType getOpType(hsql::Expr::OperatorType type, char opChar);
 };
+
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs);
 #endif //DBASE_SQL_SELECT_CUH

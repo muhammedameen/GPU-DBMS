@@ -1,5 +1,7 @@
 #include <fstream>
+
 #include "Metadata.cuh"
+#include "ColType.cuh"
 #include "utils.cuh"
 
 namespace create{
