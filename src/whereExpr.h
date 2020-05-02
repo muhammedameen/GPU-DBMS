@@ -31,40 +31,14 @@ enum whereExprType{
     OPERATOR_UMI,
 };
 
-// const int CONSTANT_ERR = -1;
-//
-// const int CONSTANT_INT = 0;
-// const int CONSTANT_FLT = 1;
-// const int CONSTANT_STR = 2;
-// const int COL_NAME = 3;
-//
-// const int OPERATOR_AND = 10;
-// const int OPERATOR_OR = 11;
-// const int OPERATOR_NOT = 12;
-//
-// const int OPERATOR_EQ = 20;
-// const int OPERATOR_NE = 21;
-// const int OPERATOR_GE = 22;
-// const int OPERATOR_LE = 23;
-// const int OPERATOR_GT = 24;
-// const int OPERATOR_LT = 25;
-//
-// const int OPERATOR_PL = 30;
-// const int OPERATOR_MI = 31;
-// const int OPERATOR_MU = 32;
-// const int OPERATOR_DI = 33;
-// const int OPERATOR_MO = 34;
-//
-// const int OPERATOR_UMI = 40;
-
-struct whereExpr {
+typedef struct {
     whereExprType type;
     int iVal;
     float fVal;
     char *sVal;
     int childLeft;
     int childRight;
-};
+} whereExpr;
 
 whereExpr *newExpr(whereExprType type, long intVal);
 

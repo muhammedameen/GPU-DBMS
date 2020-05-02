@@ -2,15 +2,17 @@
 // Created by gautam on 25/04/20.
 //
 
-#ifndef DBASE_SQL_SELECT_H
-#define DBASE_SQL_SELECT_H
+#ifndef DBASE_SQL_SELECT_CUH
+#define DBASE_SQL_SELECT_CUH
 
 #include <string>
 
 #include "whereExpr.h"
 #include "Data.h"
-#include "deviceUtil.h"
+#include "deviceUtil.cuh"
 #include "Metadata.h"
+#include "cudaOps.cuh"
+
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"
@@ -24,6 +26,4 @@ public:
 
     static whereExprType getOpType(hsql::Expr::OperatorType type, char opChar);
 };
-
-
-#endif //DBASE_SQL_SELECT_H
+#endif //DBASE_SQL_SELECT_CUH

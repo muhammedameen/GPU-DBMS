@@ -15,6 +15,7 @@
 
 #include "utils.h"
 #include "Metadata.h"
+#include "ColType.h"
 
 class Data {
 public:

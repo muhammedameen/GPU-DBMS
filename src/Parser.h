@@ -12,7 +12,7 @@
 #include "sql_create.h"
 #include "sql_drop.h"
 #include "sql_truncate.h"
-#include "sql_select.h"
+#include "sql_select.cuh"
 
 class Parser {
 private:

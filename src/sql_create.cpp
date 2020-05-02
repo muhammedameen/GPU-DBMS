@@ -12,6 +12,7 @@
 //				  );"
 
 #include "sql_create.h"
+#include "ColType.h"
 
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
 

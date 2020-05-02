@@ -2,8 +2,8 @@
 // Created by gautam on 25/04/20.
 //
 
-#include "sql_select.h"
-
+#include "sql_select.cuh"
+#include "ColType.h"
 
 void sql_select::execute(std::string &query) {
 
@@ -23,24 +23,21 @@ void sql_select::execute(std::string &query) {
             switch (expr->type) {
                 case hsql::kExprStar:
                     columnNames.emplace_back("*");
-                    // inprint("*", numIndent);
                     break;
                 case hsql::kExprColumnRef:
                     columnNames.emplace_back(expr->name);
-                    // inprint(expr->name, numIndent);
                     break;
-                    // case kExprTableColumnRef: inprint(expr->table, expr->name, numIndent); break;
+                // case hsql::kExprTableColumnRef:
+                // inprint(expr->table, expr->name, numIndent);
+                // break;
                 case hsql::kExprLiteralFloat:
                     columnNames.push_back(std::to_string(expr->fval));
-                    // inprint(expr->fval, numIndent);
                     break;
                 case hsql::kExprLiteralInt:
                     columnNames.push_back(std::to_string(expr->ival));
-                    // inprint(expr->ival, numIndent);
                     break;
                 case hsql::kExprLiteralString:
                     columnNames.emplace_back(expr->name);
-                    // inprint(expr->name, numIndent);
                     break;
                 // TODO: kExprFunctionRef (Distinct ?), kExprOperator (col1 + col2 ?)
                 // case hsql::kExprFunctionRef:
@@ -88,10 +85,10 @@ void sql_select::execute(std::string &query) {
             exprToVec(expr, tree);
             free(expr);
             // FOR DEBUGGING
-            for (auto leaf : tree) {
-                printf("TYPE: %d, ival: %ld, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
-                       leaf.sVal, leaf.childLeft, leaf.childRight);
-            }
+            // for (auto leaf : tree) {
+            //     printf("TYPE: %d, ival: %ld, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+            //            leaf.sVal, leaf.childLeft, leaf.childRight);
+            // }
 
             // GET ROWS SATISFYING WHERE
             // Data data(obj.tableNames[0], obj.columnNames);
@@ -104,7 +101,7 @@ void sql_select::execute(std::string &query) {
 
             // TEST EVAL
             // char colNames[][20] = {"r1", "r2", "r3", "r4"};
-            char *colNames[] = {"r1", "r2", "r3", "r4"};
+            const char *colNames[] = {"r1", "r2", "r3", "r4"};
             Metadata::ColType type[] = {Metadata::ColType("int"), Metadata::ColType("varchar(7)"), Metadata::ColType("int"), Metadata::ColType("float")};
             int start[] = {0, 4, 12, 16, 20};
             int end[] = {4, 12, 16, 20};
@@ -132,13 +129,42 @@ void sql_select::execute(std::string &query) {
             memcpy(&r3, (char *) row + start[2], end[2] - start[2]);
             memcpy(&r4, (char *) row + start[3], end[3] - start[3]);
             printf("R1: %d, R2: %s, R3:%d, R4:%f\n", r1, r2, r3, r4);
-            void *res;
-            int resType = 0;
-            eval(row, 20, start, 4, colNames, type, &tree[0], 0, res, resType);
-            if (resType == RESTYPE_INT) {
-                int *x = (int *) res;
-                printf("Value of expression is : %d\n", *x);
+
+            void *row_d;
+            cudaMalloc(&row_d, 20);
+            cudaMemcpy(row_d, row, 20, cudaMemcpyHostToDevice);
+
+            int *offset_d;
+            cudaMalloc(&offset_d, 5 * sizeof(int));
+            cudaMemcpy(offset_d, start, 5 * sizeof(int), cudaMemcpyHostToDevice);
+
+            char *colNames_d;
+            int *colPos_d;
+            cudaMalloc(&colNames_d, sizeof(char *) * 4 * 100);
+            cudaMalloc(&colPos_d, sizeof(int *) * 4 * 51);
+            int colPos = 0;
+            for (int i = 0; i < 4; i++) {
+                cudaMemcpy(colNames_d + 3 * i, colNames[i], sizeof(char) * 3, cudaMemcpyHostToDevice);
+                cudaMemcpy(colPos_d, &colPos, sizeof(int), cudaMemcpyDeviceToHost);
+                colPos += 3;
             }
+
+            Metadata::ColType *types_d;
+            cudaMalloc(&types_d, sizeof(Metadata::ColType) * 4);
+            cudaMemcpy(types_d, type, sizeof(Metadata::ColType) * 4, cudaMemcpyHostToDevice);
+
+            whereExpr *whereClause;
+            cudaMalloc(&whereClause, sizeof(whereExpr) * tree.size());
+            cudaMemcpy(whereClause, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
+
+            selectKernel<<<1, 1>>>(row, 20, offset_d, 4, colNames_d, colPos_d, types_d, whereClause);
+            cudaDeviceSynchronize();
+
+            // eval(row, 20, start, 4, colNames, type, &tree[0], 0, res, resType);
+            // if (resType == RESTYPE_INT) {
+            //     int *x = (int *) res;
+            //     printf("Value of expression is : %d\n", *x);
+            // }
             // END TEST EVAL
         } else {
             // RETURN ALL ROWS

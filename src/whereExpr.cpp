@@ -3,6 +3,7 @@
 //
 
 #include "whereExpr.h"
+#include "../../../../../../../../usr/include/malloc.h"
 
 
 whereExpr *newExpr(whereExprType type, long intVal) {
@@ -51,7 +52,7 @@ whereExpr *newExpr(whereExprType type){
 }
 void freeExpr(whereExpr *expr){
     if (expr->sVal != nullptr) {
-        free(expr->sVal);
+        ::free(expr->sVal);
     }
     free(expr);
 }

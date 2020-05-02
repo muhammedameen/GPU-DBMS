@@ -13,6 +13,7 @@
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"
 #include "../sql-parser/src/sql/Expr.h"
+#include "ColType.h"
 
 class sql_insert {
 public:

@@ -3,6 +3,8 @@
 //
 
 #include "Data.h"
+#include "ColType.h"
+
 Data::Data(std::string tableName) {
     this->tableName = tableName;
     this->writeHappened = false;
