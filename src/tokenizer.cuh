@@ -2,11 +2,11 @@
 // Created by gautam on 18/04/20.
 //
 
-#ifndef DBASE_TOKENIZER_H
-#define DBASE_TOKENIZER_H
+#ifndef DBASE_TOKENIZER_CUH
+#define DBASE_TOKENIZER_CUH
 
 #include <string>
-#include "utils.h"
+#include "utils.cuh"
 
 class tokenizer {
 private:
@@ -28,4 +28,4 @@ public:
 };
 
 
-#endif //DBASE_TOKENIZER_H
+#endif //DBASE_TOKENIZER_CUH

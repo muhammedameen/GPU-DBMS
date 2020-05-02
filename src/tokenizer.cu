@@ -2,7 +2,7 @@
 // Created by gautam on 18/04/20.
 //
 
-#include "tokenizer.h"
+#include "tokenizer.cuh"
 
 const char tokenizer::delims1[] = {' ', '\t'};
 const char tokenizer::delims2[] = {',', ';', '(', ')'};

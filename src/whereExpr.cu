@@ -2,9 +2,7 @@
 // Created by gautam on 28/04/20.
 //
 
-#include "whereExpr.h"
-#include "../../../../../../../../usr/include/malloc.h"
-
+#include "whereExpr.cuh"
 
 whereExpr *newExpr(whereExprType type, long intVal) {
     auto *expr = new whereExpr;

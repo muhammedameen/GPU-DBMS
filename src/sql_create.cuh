@@ -1,6 +1,6 @@
 #include <fstream>
-#include "Metadata.h"
-#include "utils.h"
+#include "Metadata.cuh"
+#include "utils.cuh"
 
 namespace create{
 

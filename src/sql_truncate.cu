@@ -1,8 +1,10 @@
 
 
 
-#include "sql_truncate.h"
+#include "sql_truncate.cuh"
+
 using namespace std;
+
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
 
 void sql_truncate::execute(std::string &query) {

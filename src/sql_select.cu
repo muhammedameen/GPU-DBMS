@@ -3,7 +3,6 @@
 //
 
 #include "sql_select.cuh"
-#include "ColType.h"
 
 void sql_select::execute(std::string &query) {
 
@@ -157,7 +156,7 @@ void sql_select::execute(std::string &query) {
             cudaMalloc(&whereClause, sizeof(whereExpr) * tree.size());
             cudaMemcpy(whereClause, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
 
-            selectKernel<<<1, 1>>>(row, 20, offset_d, 4, colNames_d, colPos_d, types_d, whereClause);
+            // selectKernel<<<1, 1>>>(row, 20, offset_d, 4, colNames_d, colPos_d, types_d, whereClause);
             cudaDeviceSynchronize();
 
             // eval(row, 20, start, 4, colNames, type, &tree[0], 0, res, resType);

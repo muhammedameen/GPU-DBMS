@@ -2,7 +2,7 @@
 // Created by gautam on 17/04/20.
 //
 
-#include "Parser.h"
+#include "Parser.cuh"
 
 Parser::Parser():type(INVALID){
 }

@@ -2,12 +2,12 @@
 // Created by gautam on 17/04/20.
 //
 
-#ifndef DBASE_CLI_H
-#define DBASE_CLI_H
+#ifndef DBASE_CLI_CUH
+#define DBASE_CLI_CUH
 
 #include <string>
 #include <iostream>
-#include "utils.h"
+#include "utils.cuh"
 
 class CLI {
 private:
@@ -21,4 +21,4 @@ public:
 };
 
 
-#endif //DBASE_CLI_H
+#endif //DBASE_CLI_CUH

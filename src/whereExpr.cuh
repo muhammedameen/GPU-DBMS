@@ -2,8 +2,8 @@
 // Created by gautam on 27/04/20.
 //
 
-#ifndef DBASE_WHEREEXPR_H
-#define DBASE_WHEREEXPR_H
+#ifndef DBASE_WHEREEXPR_CUH
+#define DBASE_WHEREEXPR_CUH
 
 #include <cstring>
 #include <cstdlib>
@@ -50,4 +50,4 @@ whereExpr *newExpr(whereExprType type);
 
 void freeExpr(whereExpr *expr);
 
-#endif //DBASE_WHEREEXPR_H
+#endif //DBASE_WHEREEXPR_CUH

@@ -2,8 +2,7 @@
 // Created by ameen on 30/04/20.
 //
 
-#include "Data.h"
-#include "ColType.h"
+#include "Data.cuh"
 
 Data::Data(std::string tableName) {
     this->tableName = tableName;

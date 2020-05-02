@@ -20,6 +20,8 @@ INSTALL    = /usr/local
 
 CTESTFLAGS = -Wall -Isrc/ -Itest/ -L./ -std=c++14 -lstdc++ -g
 
+CXX = /usr/local/cuda/bin/nvcc
+
 all: library
 
 library: $(TARGET)

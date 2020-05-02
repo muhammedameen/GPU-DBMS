@@ -2,8 +2,8 @@
 // Created by gautam on 17/04/20.
 //
 
-#ifndef DBASE_UTILS_H
-#define DBASE_UTILS_H
+#ifndef DBASE_UTILS_CUH
+#define DBASE_UTILS_CUH
 
 
 #include <string>
@@ -56,4 +56,4 @@ public:
 };
 
 
-#endif //DBASE_UTILS_H
+#endif //DBASE_UTILS_CUH

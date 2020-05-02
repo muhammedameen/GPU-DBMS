@@ -11,8 +11,7 @@
 //				    PRIMARY KEY (ID)
 //				  );"
 
-#include "sql_create.h"
-#include "ColType.h"
+#include "sql_create.cuh"
 
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
 

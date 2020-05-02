@@ -3,10 +3,10 @@
 //
 
 #include <fstream>
-#include "utils.h"
+#include "utils.cuh"
 
 std::string const utils::DATABASE_DIR = "../DB";
-std::string const utils::DATABASE_FILE_PATH = DATABASE_DIR + "/Database";
+std::string const utils::DATABASE_FILE_PATH = utils::DATABASE_DIR + "/Database";
 std::vector<std::string> utils::tables = std::vector<std::string>();
 
 void utils::ltrim(std::string &s)  {

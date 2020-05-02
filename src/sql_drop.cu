@@ -1,8 +1,10 @@
 
 
 
-#include "sql_drop.h"
+#include "sql_drop.cuh"
+
 using namespace std;
+
 #define invalidQuery(query) {utils::invalidQuery(query); return;}
 
 void sql_drop::execute(std::string &query) {

@@ -2,8 +2,8 @@
 // Created by ameen on 30/04/20.
 //
 
-#ifndef DBASE_DATA_H
-#define DBASE_DATA_H
+#ifndef DBASE_DATA_CUH
+#define DBASE_DATA_CUH
 
 
 #include <string>
@@ -13,9 +13,8 @@
 #include <map>
 #include <stdio.h>
 
-#include "utils.h"
-#include "Metadata.h"
-#include "ColType.h"
+#include "utils.cuh"
+#include "Metadata.cuh"
 
 class Data {
 public:
@@ -37,4 +36,4 @@ private:
 };
 
 
-#endif //DBASE_DATA_H
+#endif //DBASE_DATA_CUH

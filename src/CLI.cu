@@ -2,7 +2,7 @@
 // Created by gautam on 17/04/20.
 //
 
-#include "CLI.h"
+#include "CLI.cuh"
 
 CLI::CLI(): done(false), line("") {
     // load tables

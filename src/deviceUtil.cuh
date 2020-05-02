@@ -7,9 +7,8 @@
 
 // #include <cuda_runtime.h>
 
-#include "whereExpr.h"
-#include "Metadata.h"
-#include "ColType.h"
+#include "whereExpr.cuh"
+#include "Metadata.cuh"
 
 const int RESTYPE_INT = 1;
 const int RESTYPE_FLT = 2;

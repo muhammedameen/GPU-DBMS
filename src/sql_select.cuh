@@ -7,11 +7,11 @@
 
 #include <string>
 
-#include "whereExpr.h"
-#include "Data.h"
+#include "whereExpr.cuh"
+#include "Data.cuh"
 #include "deviceUtil.cuh"
-#include "Metadata.h"
-#include "cudaOps.cuh"
+#include "Metadata.cuh"
+// #include "cudaOps.cuh"
 
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"

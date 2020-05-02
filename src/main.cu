@@ -1,5 +1,5 @@
-#include "CLI.h"
-#include "Parser.h"
+#include "CLI.cuh"
+#include "Parser.cuh"
 
 int main() {
     CLI interface;

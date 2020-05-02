@@ -3,7 +3,6 @@
 //
 
 #include "deviceUtil.cuh"
-#include "ColType.h"
 
 __device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, const char *cols, const int *colStart, Metadata::ColType types[],
                      whereExpr *exprArr, int currPos,

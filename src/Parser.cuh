@@ -2,16 +2,16 @@
 // Created by gautam on 17/04/20.
 //
 
-#ifndef DBASE_PARSER_H
-#define DBASE_PARSER_H
+#ifndef DBASE_PARSER_CUH
+#define DBASE_PARSER_CUH
 
 
 #include <string>
 #include <iostream>
-#include "utils.h"
-#include "sql_create.h"
-#include "sql_drop.h"
-#include "sql_truncate.h"
+#include "utils.cuh"
+#include "sql_create.cuh"
+#include "sql_drop.cuh"
+#include "sql_truncate.cuh"
 #include "sql_select.cuh"
 
 class Parser {
@@ -38,4 +38,4 @@ public:
 };
 
 
-#endif //DBASE_PARSER_H
+#endif //DBASE_PARSER_CUH

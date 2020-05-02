@@ -9,35 +9,40 @@ set(CMAKE_CXX_STANDARD 14)
 
 file(GLOB parser_src_parser_source
         "sql-parser/src/parser/*.h"
-        "sql-parser/src/parser/*.cpp"
+#        "sql-parser/src/parser/*.cpp"
         )
-
+#
 file(GLOB parser_src_sql_source
         "sql-parser/src/sql/*.h"
-        "sql-parser/src/sql/*.cpp"
+#        "sql-parser/src/sql/*.cpp"
         )
 
 add_executable(dbase src/main.cu
-        src/sql_create.cpp src/sql_create.h
-        src/CLI.cpp src/CLI.h
-        src/utils.cpp src/utils.h
-        src/Parser.cpp src/Parser.h
-        src/Metadata.cpp src/Metadata.h
-        src/sql_drop.cpp src/sql_drop.h
-        src/tokenizer.cpp src/tokenizer.h
-        src/sql_truncate.cpp src/sql_truncate.h
+        src/sql_create.cu src/sql_create.cuh
+        src/CLI.cu src/CLI.cuh
+        src/utils.cu src/utils.cuh
+        src/Parser.cu src/Parser.cuh
+        src/Metadata.cu src/Metadata.cuh
+        src/sql_drop.cu src/sql_drop.cuh
+        src/tokenizer.cu src/tokenizer.cuh
+        src/sql_truncate.cu src/sql_truncate.cuh
 
-        sql-parser/src/sqlhelper.cpp sql-parser/src/sqlhelper.h
-        sql-parser/src/SQLParser.cpp sql-parser/src/SQLParser.h
-        sql-parser/src/SQLParserResult.cpp sql-parser/src/SQLParserResult.h
+#        sql-parser/src/sqlhelper.cpp
+        sql-parser/src/sqlhelper.h
+#        sql-parser/src/SQLParser.cpp
+        sql-parser/src/SQLParser.h
+#        sql-parser/src/SQLParserResult.cpp
+        sql-parser/src/SQLParserResult.h
         ${parser_src_parser_source}
         ${parser_src_sql_source}
 
         src/sql_select.cu src/sql_select.cuh
-        src/whereExpr.h src/whereExpr.cpp
+        src/whereExpr.cuh src/whereExpr.cu
         src/deviceUtil.cu src/deviceUtil.cuh
-        src/Data.cpp src/Data.h
-        src/sql_insert.cpp src/sql_insert.h src/cudaOps.cu src/cudaOps.cuh src/ColType.cpp src/ColType.h)
+        src/Data.cu src/Data.cuh
+        src/sql_insert.cu src/sql_insert.cuh)
+
+target_link_libraries(dbase "${CMAKE_HOME_DIRECTORY}/sql-parser/libsqlparser.so")
 
 set_target_properties(
         dbase
