@@ -43,6 +43,10 @@ Metadata::Metadata(std::string tableName) {
             keyCols.push_back(val);
             keyMap[val] = index++;
         }
+        // Read row count
+        getline(metadataIn, line);
+        iss = std::istringstream(line);
+        iss >> rowCount;
         metadataIn.close();
     }
     // No need to create now, wait till destructor is reached. Might be invalidated later.

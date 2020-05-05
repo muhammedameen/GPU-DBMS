@@ -51,6 +51,7 @@ void sql_insert::execute(std::string &query) {
         // write row to data
         std::ofstream in;
         in.open(utils::getDataFileName(mdata.tableName), std::ios::binary | std::ios::app);
+        in.seekp(mdata.rowCount * mdata.rowSize);
         in.write(static_cast<const char *>(row), mdata.rowSize);
         // increment mdata.rowCount
         mdata.rowCount += 1;
