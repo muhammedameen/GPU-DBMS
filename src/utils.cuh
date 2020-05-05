@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include "ColType.cuh"
 
 class utils {
 public:
@@ -53,6 +54,10 @@ public:
     static void dropTable(std::string &tableName);
 
     static void writeDatabase();
+
+    static void printRow(void *row, std::vector<ColType> &cols);
+
+    static void printMultiple(void *row, std::vector<ColType> &cols, int rowSize, int numRows);
 };
 
 

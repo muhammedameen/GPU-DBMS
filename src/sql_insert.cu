@@ -40,6 +40,18 @@ void sql_insert::execute(std::string &query) {
                         // stmt->values->at(index)->name
                         memcpy((char *) row + startIndex, (stmt->values->at(index)->name), mdata.getColType(currCol).size);
                         break;
+                    case hsql::kExprStar:
+                        break;
+                    case hsql::kExprPlaceholder:
+                        break;
+                    case hsql::kExprColumnRef:
+                        break;
+                    case hsql::kExprFunctionRef:
+                        break;
+                    case hsql::kExprOperator:
+                        break;
+                    case hsql::kExprSelect:
+                        break;
                 }
             }
             // if not, insert null value to array (111111)
@@ -51,9 +63,7 @@ void sql_insert::execute(std::string &query) {
         // write row to data
         std::ofstream in;
         in.open(utils::getDataFileName(mdata.tableName), std::ios::binary | std::ios::app);
-        in.seekp(mdata.rowCount * mdata.rowSize);
         in.write(static_cast<const char *>(row), mdata.rowSize);
-        // increment mdata.rowCount
         mdata.rowCount += 1;
         mdata.commit();
 

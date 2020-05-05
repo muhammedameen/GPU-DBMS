@@ -116,6 +116,49 @@ void utils::writeDatabase() {
     fout.close();
 }
 
+void utils::printRow(void *row, std::vector<ColType> &cols) {
+    int start = 0;
+    for (const auto &c : cols) {
+        switch (c.type) {
+            case TYPE_INT: {
+                int temp = *((int *) ((char *) row + start));
+                printf("%d", temp);
+                start += sizeof(int);
+                break;
+            }
+            case TYPE_FLOAT: {
+                float temp = *((float *) ((char *) row + start));
+                printf("%f", temp);
+                start += sizeof(float);
+                break;
+            }
+            case TYPE_BOOL:
+                break;
+            case TYPE_VARCHAR: {
+                char *temp = (char *) row + start;
+                printf("%s", temp);
+                start += c.size;
+                break;
+            }
+            case TYPE_DATETIME:
+                break;
+            case TYPE_INVALID:
+                break;
+        }
+        if (&c != &cols[cols.size() - 1]) {
+            printf(", ");
+        }
+    }
+    printf("\n");
+}
+
+void utils::printMultiple(void *data, std::vector<ColType> &cols, int rowSize, int numRows) {
+    int start = 0;
+    for (int i = 0; i < numRows; i++, start += rowSize) {
+        printRow((char *)data + start, cols);
+    }
+}
+
 
 
 
