@@ -100,7 +100,7 @@ void Metadata::commit() {
         fout << rowCount << " ";
         fout << std::endl;
         fout.close();
-        fout = std::ofstream(dataFileName);
+        fout = std::ofstream(dataFileName, std::ios::app);
         fout.close();
     }
 }
