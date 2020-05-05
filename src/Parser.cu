@@ -22,7 +22,7 @@ void Parser::parse(std::string query) {
     } else if (type == TRUNCATE) {
         sql_truncate::execute(query);
     } else if (type == INSERT) {
-        // InsertClass.execute(query);
+         sql_insert::execute(query);
     } else if (type == SELECT) {
         sql_select::execute(query);
     } else if (type == UPDATE) {

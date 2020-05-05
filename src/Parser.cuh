@@ -13,6 +13,7 @@
 #include "sql_drop.cuh"
 #include "sql_truncate.cuh"
 #include "sql_select.cuh"
+#include "sql_insert.cuh"
 
 class Parser {
 private:
