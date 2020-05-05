@@ -56,7 +56,7 @@ Data::~Data() {
         remove(utils::getDataFileName(tableName).c_str());
         rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
     }
-    esle
+    else
         remove(utils::getTempFileName(tableName).c_str());
 }
 

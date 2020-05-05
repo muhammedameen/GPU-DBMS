@@ -14,7 +14,7 @@ ColType newColType() {
 
 ColType newColType(std::string typeString) {
     ColType c;
-    utils::toLower(typeString);
+    // utils::toLower(typeString);
     c.str = typeString;
     if (typeString == "int") {
         c.type = TYPE_INT;

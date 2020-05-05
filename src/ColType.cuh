@@ -7,7 +7,7 @@
 
 #include <string>
 #include <sstream>
-#include "utils.cuh"
+// #include "utils.cuh"
 
 enum DATATYPE {
     TYPE_INT,
