@@ -93,6 +93,8 @@ void Metadata::commit() {
             fout << keyCol << " ";
         }
         fout << std::endl;
+        fout << rowCount << " ";
+        fout << std::endl;
         fout.close();
         fout = std::ofstream(dataFileName);
         fout.close();

@@ -95,6 +95,6 @@ namespace create {
                 break;
         }
         m.commit();
-        utils::addTable(word);
+        utils::addTable(m.tableName);
     }
 }

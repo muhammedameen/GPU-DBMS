@@ -89,7 +89,7 @@ bool utils::tableExists(std::string &tableName) {
             break;
         }
     }
-    return i == tables.size();
+    return i != tables.size();
 }
 
 void utils::addTable(std::string &tableName) {

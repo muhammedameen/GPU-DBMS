@@ -16,15 +16,9 @@
 
 class sql_insert {
 public:
-    explicit sql_insert(std::string &query);
+
 
     static void execute(std::string &query);
-
-    hsql::SQLParserResult *result;
-    std::vector<std::string> columnNames;
-    std::vector<hsql::Expr*> values;
-    std::string tableName;
-    Metadata mdata;
 
 };
 
