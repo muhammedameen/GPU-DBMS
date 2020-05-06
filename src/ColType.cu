@@ -8,14 +8,16 @@ ColType newColType() {
     ColType c;
     c.type = TYPE_INVALID;
     c.size = 0;
-    c.str = "";
+    // c.str = "";
+    strcpy(c.str, "");
     return c;
 }
 
 ColType newColType(std::string typeString) {
     ColType c;
     // utils::toLower(typeString);
-    c.str = typeString;
+    // c.str = typeString;
+    strcpy(c.str, typeString.c_str());
     if (typeString == "int") {
         c.type = TYPE_INT;
         c.size = 4;

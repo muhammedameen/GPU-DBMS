@@ -15,10 +15,15 @@ const int RESTYPE_FLT = 2;
 const int RESTYPE_DTM = 3;
 const int RESTYPE_BOOL = 4;
 
-__device__ void eval(void *row, int rowSize, const int *offset, int offsetSize, ColType types[], whereExpr *expr, int currPos, void *&res, int &resType);
+__device__ void
+eval(void *row, int *offset, ColType types[], whereExpr exprArr[], int currPos,
+         void *&res, int &resType);
 
+// __device__ void evalUtil(void *row, int currPos, void *&res, int &resType);
 
 __device__ int myStrncmp(const char *str_a, const char *str_b, unsigned len = 256);
 
 __device__ int myStrlen(const char *str);
+
+__device__ void printRowDevice(void *row, ColType *colTypes, int numCols);
 #endif //DBASE_DEVICEUTIL_CUH

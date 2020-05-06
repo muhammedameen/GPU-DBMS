@@ -4,16 +4,55 @@
 
 #include "sql_select.cuh"
 
-__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs) {
-    void *res;
-    int resType = 0;
-    eval(data, rowSize, offset, offsetSize, types, exprs, 0, res, resType);
-    if (resType == RESTYPE_INT) {
-        int *x = (int *) res;
-        printf("Value of expression is : %d\n", *x);
-    } else {
-        printf("Res Type is : %d", resType);
+#define NUM_THREADS 512
+
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows) {
+    void *res = malloc(sizeof(int));
+    int resType = 1;
+
+    // for (int i = 0; i < offsetSize; i++) {
+    //     printf("%d ", types[i].size);
+    // }
+    // printf("\n");
+    // for (int i = 0; i < 3; i++) {
+    //     auto leaf = exprs[i];
+    //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+    //                 leaf.sVal, leaf.childLeft, leaf.childRight);
+    // }
+    // printf("Rowsize: %d\n", rowSize);
+    // printf("%f\n", *(float *)((char *)data + rowSize + offset[3]));
+
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    for (unsigned int i = start; i < end; i++) {
+        if(i >= numRows) break;
+        void *row = (char *)data + i * rowSize;
+        eval(row, offset, types, exprs, 0, res, resType);
+        if (resType == RESTYPE_INT) {
+            int x = *(int *) res;
+            printf("Value of expression for row(%d) is : %d\n", i, x);
+            if (x != 0) {
+                // printRowDevice(row, types, offsetSize);
+            }
+        } else if (resType == RESTYPE_FLT) {
+            float x = *(float *) res;
+            printf("Value of expression for row (%d) is : %f\n", i, x);
+            if (x != 0) {
+                // printRowDevice(row, types, offsetSize);
+            }
+        } else {
+            printf("Res Type is : %s", res);
+        }
     }
+}
+
+__global__ void cudaVoidTest(int y) {
+    int *ptr = (int *)malloc(sizeof(int));
+    memcpy(ptr, &y, sizeof(int));
+    int x = *(int *) ptr;
+    // int x = 5;
+    printf("Inside kernel: %d\n", x);
 }
 
 void sql_select::execute(std::string &query) {
@@ -92,15 +131,31 @@ void sql_select::execute(std::string &query) {
         if (stmt->whereClause != nullptr) {
             // Get where
             std::vector<whereExpr> tree;
-            printf("%s\n", tableNames[0].c_str());
+            // printf("%s\n", tableNames[0].c_str());
             Data d(tableNames[0]);
 
             auto expr = stmt->whereClause;
             exprToVec(expr, tree, d.mdata.columns);
             free(expr);
 
+            // cudaError_t err = cudaSetDevice(0);
+            // if (err != cudaSuccess) {
+            //     printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+            // }
+            //
+            // cudaVoidTest<<<1, 1>>>(5);
+            // err = cudaGetLastError();
+            // if (err != cudaSuccess) {
+            //     printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+            // }
+            // err = cudaDeviceSynchronize();
+            // if (err != cudaSuccess) {
+            //     printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+            // }
+            // return;
+
             int rowSize = d.mdata.rowSize;
-            void *data = malloc(d.chunkSize);
+            void *data = malloc(d.chunkSize * rowSize);
             void *data_d;
             int numCols = d.mdata.columns.size();
             ColType *type_d;
@@ -110,24 +165,29 @@ void sql_select::execute(std::string &query) {
             cudaMalloc(&where_d, sizeof(whereExpr) * tree.size());
             cudaMemcpy(where_d, &tree[0], sizeof(whereExpr) * tree.size(), cudaMemcpyHostToDevice);
             int *offsets = (int *) malloc(sizeof(int) * (numCols + 1));
-            offsets[0] = d.mdata.datatypes[0].size;
+            offsets[0] = 0; //d.mdata.datatypes[0].size;
             for (int i = 1; i <= numCols; i++) {
-                offsets[i] = offsets[i - 1] + d.mdata.datatypes[i].size;
+                offsets[i] = offsets[i - 1] + d.mdata.datatypes[i - 1].size;
             }
             int *offsets_d;
             cudaMalloc(&offsets_d, sizeof(int) * (numCols + 1));
             cudaMemcpy(offsets_d, offsets, sizeof(int) * (numCols + 1), cudaMemcpyHostToDevice);
             int numRows = d.read(data);
 
+            // printing data in table
+            utils::printMultiple(data, d.mdata.datatypes, d.mdata.rowSize, d.mdata.rowCount);
+
+            cudaMalloc(&data_d, d.chunkSize * rowSize);
             while (numRows > 0) {
-                printf("Inside\n");
-                fflush(stdout);
-                cudaMalloc(&data_d, rowSize * numRows);
+                // printf("Inside\n");
+                // fflush(stdout);
                 cudaMemcpy(data_d, data, rowSize * numRows, cudaMemcpyHostToDevice);
-                selectKernel<<<1, 512>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d);
+                selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, numRows);
                 cudaDeviceSynchronize();
                 cudaError_t err = cudaGetLastError();
-                printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+                if (err != cudaSuccess) {
+                    printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+                }
                 numRows = d.read(data);
             }
 

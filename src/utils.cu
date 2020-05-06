@@ -153,6 +153,7 @@ void utils::printRow(void *row, std::vector<ColType> &cols) {
 
 void utils::printMultiple(void *data, std::vector<ColType> &cols, int rowSize, int numRows) {
     int start = 0;
+    printf("\n");
     for (int i = 0; i < numRows; i++, start += rowSize) {
         printRow((char *)data + start, cols);
     }

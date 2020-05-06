@@ -13,12 +13,12 @@
 #include "Metadata.cuh"
 #include "ColType.cuh"
 
-// #include "cudaOps.cuh"
-
 #include "../sql-parser/src/SQLParserResult.h"
 #include "../sql-parser/src/SQLParser.h"
 #include "../sql-parser/src/sqlhelper.h"
 #include "../sql-parser/src/sql/Expr.h"
+
+#include <cuda_runtime.h>
 
 class sql_select {
 public:
@@ -26,5 +26,5 @@ public:
 
 };
 
-__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs);
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows);
 #endif //DBASE_SQL_SELECT_CUH

@@ -7,7 +7,6 @@
 
 #include <string>
 #include <sstream>
-// #include "utils.cuh"
 
 enum DATATYPE {
     TYPE_INT,
@@ -21,7 +20,7 @@ enum DATATYPE {
 typedef struct {
     DATATYPE type;
     int size;
-    std::string str;
+    char str[10];
     // ColType(std::string typeString);
 } ColType;
 

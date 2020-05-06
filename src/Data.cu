@@ -8,7 +8,7 @@ Data::Data(std::string tableName) {
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
-    chunkSize = ((500 * 1000000) / (mdata.rowSize * 1024)) * 1024;
+    chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize * 1024)) * 1024;
     readCount = 0;
     writeHappened = false;
     f.open(utils::getDataFileName(tableName), std::ios::binary);
