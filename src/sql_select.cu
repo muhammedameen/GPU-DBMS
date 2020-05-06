@@ -45,7 +45,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
                     // printRowDevice(row, types, offsetSize);
                 }
             } else {
-                printf("Res Type is : %s", res);
+                printf("Res Type is : %s\n", res);
             }
             free(res);
         }

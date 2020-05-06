@@ -66,10 +66,10 @@ void sql_insert::execute(std::string &query) {
         in.write(static_cast<const char *>(row), mdata.rowSize);
         mdata.rowCount += 1;
         mdata.commit();
-        void * printData = malloc(mdata.rowSize * mdata.rowCount);
-        Data object(mdata.tableName);
-        object.read(printData);
-        utils::printMultiple(printData, mdata.datatypes, mdata.rowSize, (int)mdata.rowCount);
+        // void * printData = malloc(mdata.rowSize * mdata.rowCount);
+        // Data object(mdata.tableName);
+        // object.read(printData);
+        // utils::printMultiple(printData, mdata.datatypes, mdata.rowSize, (int)mdata.rowCount);
 
     }else {
         fprintf(stderr, "Given string is not a valid SQL query.\n");

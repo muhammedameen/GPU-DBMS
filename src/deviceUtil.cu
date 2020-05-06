@@ -53,16 +53,29 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
     bool *solved = (bool *) malloc(sizeof(bool) * 100);
     void **resArr = (void **) malloc(sizeof(void *) * 100);
     int *resTypeArr = (int *) malloc(sizeof(int) * 100);
-    for (int i = 0; i < 100; i++) solved[i] = false;
+    bool *freeAble = (bool *) malloc(sizeof(bool) * 100);
+    for (int i = 0; i < 100; i++) {solved[i] = false; freeAble[i] = true;}
     int count = 1;
     while (count > 0) {
         // pop
         int index = exprStack[count - 1];
         whereExpr *expr = &exprArr[index];
         --count;
-        // check if children are solved
-        // if solved evaluate current node
-        // else push children
+        // check if children are solved; if solved evaluate current node; else push children
+        if(!solved[index]){
+            // push this and ALL children
+            exprStack[count] = index;
+            ++count;
+            if (expr->childLeft != -1) {
+                exprStack[count] = expr->childLeft;
+                ++count;
+            }
+            if (expr->childRight != -1) {
+                exprStack[count] = expr->childRight;
+                ++count;
+            }
+            continue;
+        }
         switch (expr->type) {
             case CONSTANT_ERR:
                 printf("Error");
@@ -78,14 +91,40 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
             case CONSTANT_FLT: {
                 solved[index] = true;
                 resTypeArr[index] = RESTYPE_FLT;
-                int *temp = (int *) malloc(sizeof(float));
+                float *temp = (float *) malloc(sizeof(float));
                 *temp = expr->fVal;
                 resArr[index] = temp;
                 break;
             }
             case CONSTANT_STR:{
-
+                solved[index] = true;
+                resTypeArr[index] = -myStrlen(expr->sVal) - 1;
+                resArr[index] = expr->sVal;
+                freeAble[index] = false;
                 break;
+            }
+            case COL_NAME: {
+                int colId = expr->iVal;
+                int start = offset[colId];
+                solved[index] = true;
+                resArr[index] = (char *) row + start;
+                freeAble[index] = false;
+                switch (types[colId].type) {
+                    case TYPE_INT: {
+                        resTypeArr[index] = RESTYPE_INT;
+                        break;
+                    }
+                    case TYPE_FLOAT: {
+                        resTypeArr[index] = RESTYPE_FLT;
+                        break;
+                    }
+                    case TYPE_VARCHAR: {
+                        resTypeArr[index] = types[colId].size;
+                        break;
+                    }
+                    default:
+                        printf("Not implemented\n");
+                }
             }
             case OPERATOR_PL: {
                 if (solved[expr->childLeft] && solved[expr->childRight]) {
@@ -97,7 +136,7 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                     resTypeArr[index] = RESTYPE_FLT;
                     if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
                         float lhs, rhs;
-                        float *temp = (float *)malloc(sizeof(float));
+                        float *temp = (float *) malloc(sizeof(float));
                         lhs = *(float *) lres;
                         rhs = *(float *) rres;
                         *temp = lhs + rhs;
@@ -105,7 +144,7 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                     } else if (ltype == RESTYPE_FLT) {
                         float lhs;
                         int rhs;
-                        float *temp = (float *)malloc(sizeof(float));
+                        float *temp = (float *) malloc(sizeof(float));
                         lhs = *(float *) lres;
                         rhs = *(int *) rres;
                         *temp = lhs + rhs;
@@ -113,29 +152,58 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                     } else if (rtype == RESTYPE_FLT) {
                         int lhs;
                         float rhs;
-                        float *temp = (float *)malloc(sizeof(float));
+                        float *temp = (float *) malloc(sizeof(float));
                         lhs = *(int *) lres;
                         rhs = *(float *) rres;
                         *temp = lhs + rhs;
                         resArr[index] = temp;
                     } else {
                         resTypeArr[index] = RESTYPE_INT;
-                        int *temp = (int *)malloc(sizeof(float));
+                        int *temp = (int *) malloc(sizeof(float));
                         int lhs, rhs;
                         lhs = *(int *) lres;
                         rhs = *(int *) rres;
                         *temp = lhs + rhs;
                         resArr[index] = temp;
                     }
-                } else {
-                    // push this
-                    // push ALL children
-                    exprStack[count] = index;
-                    ++count;
-                    exprStack[count] = expr->childLeft;
-                    ++count;
-                    exprStack[count] = expr->childRight;
-                    ++count;
+                }
+                break;
+            }
+            case OPERATOR_EQ: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *) malloc(sizeof(int));
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs == rhs;
+                    } else if (ltype == RESTYPE_FLT && rtype == RESTYPE_INT) {
+                        float lhs;
+                        int rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs == rhs;
+                    } else if (rtype == RESTYPE_FLT && ltype == RESTYPE_INT) {
+                        int lhs;
+                        float rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs == rhs;
+                    } else if (ltype == RESTYPE_INT && rtype == RESTYPE_INT){
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs == rhs;
+                    } else {
+                        *temp = myStrncmp((const char *) lres, (const char *) rres, min(-ltype, -rtype)) == 0;
+                    }
+                    resArr[index] = temp;
                 }
                 break;
             }
@@ -179,15 +247,6 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                         *temp = lhs - rhs;
                         resArr[index] = temp;
                     }
-                } else {
-                    // push this
-                    // push ALL children
-                    exprStack[count] = index;
-                    ++count;
-                    exprStack[count] = expr->childLeft;
-                    ++count;
-                    exprStack[count] = expr->childRight;
-                    ++count;
                 }
                 break;
             }
@@ -231,15 +290,6 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                         *temp = lhs * rhs;
                         resArr[index] = temp;
                     }
-                } else {
-                    // push this
-                    // push ALL children
-                    exprStack[count] = index;
-                    ++count;
-                    exprStack[count] = expr->childLeft;
-                    ++count;
-                    exprStack[count] = expr->childRight;
-                    ++count;
                 }
                 break;
             }
@@ -252,7 +302,7 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
     resType = resTypeArr[0];
     free(resTypeArr);
     for (int i = 1; i < 100; i++) {
-        if (solved[i]) {
+        if (solved[i] && freeAble[i]) {
             free(resArr[i]);
         }
     }
