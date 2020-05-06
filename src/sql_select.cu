@@ -7,52 +7,49 @@
 #define NUM_THREADS 512
 
 __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows) {
-    void *res = malloc(sizeof(int));
+    if (threadIdx.x == 0) {
+        // for (int i = 0; i < offsetSize; i++) {
+        //     printf("%d ", types[i].size);
+        // }
+        // printf("\n");
+        for (int i = 0; i < 3; i++) {
+            auto leaf = exprs[i];
+            printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+                   leaf.sVal, leaf.childLeft, leaf.childRight);
+        }
+        // printf("Rowsize: %d\n", rowSize);
+        // printf("%f\n", *(float *)((char *)data + rowSize + offset[3]));
+    }
+
+    void *res;
     int resType = 1;
-
-    // for (int i = 0; i < offsetSize; i++) {
-    //     printf("%d ", types[i].size);
-    // }
-    // printf("\n");
-    // for (int i = 0; i < 3; i++) {
-    //     auto leaf = exprs[i];
-    //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
-    //                 leaf.sVal, leaf.childLeft, leaf.childRight);
-    // }
-    // printf("Rowsize: %d\n", rowSize);
-    // printf("%f\n", *(float *)((char *)data + rowSize + offset[3]));
-
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
     unsigned int start = rowsPerBlock * threadIdx.x;
     unsigned int end = rowsPerBlock * (threadIdx.x + 1);
     for (unsigned int i = start; i < end; i++) {
-        if(i >= numRows) break;
+
         void *row = (char *)data + i * rowSize;
-        eval(row, offset, types, exprs, 0, res, resType);
-        if (resType == RESTYPE_INT) {
-            int x = *(int *) res;
-            printf("Value of expression for row(%d) is : %d\n", i, x);
-            if (x != 0) {
-                // printRowDevice(row, types, offsetSize);
+        // eval(row, offset, types, exprs, 0, res, resType);
+        eval(row, offset, types, exprs, res, resType, i, i < numRows);
+        if (i < numRows) {
+            if (resType == RESTYPE_INT) {
+                int x = *(int *) res;
+                printf("Value of expression for row(%d) is : %d\n", i, x);
+                if (x != 0) {
+                    // printRowDevice(row, types, offsetSize);
+                }
+            } else if (resType == RESTYPE_FLT) {
+                float x = *(float *) res;
+                printf("Value of expression for row (%d) is : %f\n", i, x);
+                if (x != 0) {
+                    // printRowDevice(row, types, offsetSize);
+                }
+            } else {
+                printf("Res Type is : %s", res);
             }
-        } else if (resType == RESTYPE_FLT) {
-            float x = *(float *) res;
-            printf("Value of expression for row (%d) is : %f\n", i, x);
-            if (x != 0) {
-                // printRowDevice(row, types, offsetSize);
-            }
-        } else {
-            printf("Res Type is : %s", res);
+            free(res);
         }
     }
-}
-
-__global__ void cudaVoidTest(int y) {
-    int *ptr = (int *)malloc(sizeof(int));
-    memcpy(ptr, &y, sizeof(int));
-    int x = *(int *) ptr;
-    // int x = 5;
-    printf("Inside kernel: %d\n", x);
 }
 
 void sql_select::execute(std::string &query) {
@@ -159,6 +156,14 @@ void sql_select::execute(std::string &query) {
             void *data_d;
             int numCols = d.mdata.columns.size();
             ColType *type_d;
+            cudaSetDevice(0);
+            cudaDeviceReset();
+            // size_t mem_free_0, mem_tot_0;
+            // cudaMemGetInfo(&mem_free_0, &mem_tot_0);
+            // std::cout << "Free memory: " << mem_free_0 << std::endl;
+            // std::cout << "Total memory: " << mem_tot_0 << std::endl;
+            // std::cout << "Major: " << cudaDevAttrComputeCapabilityMajor << " Minor: " << cudaDevAttrComputeCapabilityMinor << std::endl;
+
             cudaMalloc(&type_d, sizeof(ColType) * numCols);
             cudaMemcpy(type_d, &d.mdata.datatypes[0], sizeof(ColType) * numCols, cudaMemcpyHostToDevice);
             whereExpr *where_d;
@@ -183,6 +188,7 @@ void sql_select::execute(std::string &query) {
                 // fflush(stdout);
                 cudaMemcpy(data_d, data, rowSize * numRows, cudaMemcpyHostToDevice);
                 selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, numRows);
+                // eval(data, offsets, &d.mdata.datatypes, &tree[0], , , 0);
                 cudaDeviceSynchronize();
                 cudaError_t err = cudaGetLastError();
                 if (err != cudaSuccess) {
@@ -191,6 +197,13 @@ void sql_select::execute(std::string &query) {
                 numRows = d.read(data);
             }
 
+            // Free all the data
+            free(data);
+            free(offsets);
+            cudaFree(data_d);
+            cudaFree(type_d);
+            cudaFree(where_d);
+            cudaFree(offsets_d);
             // FOR DEBUGGING
             // for (auto leaf : tree) {
             //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,

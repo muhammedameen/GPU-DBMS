@@ -10,16 +10,21 @@
 #include "whereExpr.cuh"
 #include "ColType.cuh"
 
+#pragma hd_warning_disable
+
 const int RESTYPE_INT = 1;
 const int RESTYPE_FLT = 2;
 const int RESTYPE_DTM = 3;
 const int RESTYPE_BOOL = 4;
 
-__device__ void
-eval(void *row, int *offset, ColType types[], whereExpr exprArr[], int currPos,
-         void *&res, int &resType);
+// __device__ void
+// eval(void *row, int *offset, ColType types[], whereExpr exprArr[], int currPos,
+//          void *&res, int &resType);
 
-// __device__ void evalUtil(void *row, int currPos, void *&res, int &resType);
+__device__ void eval(void *row, int *offset, ColType types[], whereExpr *exprArr,
+     void *&res, int &resType, int tid, bool flag);
+
+__device__ void evalUtil(void *row, int currPos, void *&res, int &resType);
 
 __device__ int myStrncmp(const char *str_a, const char *str_b, unsigned len = 256);
 
