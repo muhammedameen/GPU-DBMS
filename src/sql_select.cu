@@ -12,11 +12,11 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
         //     printf("%d ", types[i].size);
         // }
         // printf("\n");
-        for (int i = 0; i < 3; i++) {
-            auto leaf = exprs[i];
-            printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
-                   leaf.sVal, leaf.childLeft, leaf.childRight);
-        }
+        // for (int i = 0; i < 3; i++) {
+        //     auto leaf = exprs[i];
+        //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+        //            leaf.sVal, leaf.childLeft, leaf.childRight);
+        // }
         // printf("Rowsize: %d\n", rowSize);
         // printf("%f\n", *(float *)((char *)data + rowSize + offset[3]));
     }
