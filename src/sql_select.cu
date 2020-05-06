@@ -36,13 +36,13 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
                 int x = *(int *) res;
                 printf("Value of expression for row(%d) is : %d\n", i, x);
                 if (x != 0) {
-                    // printRowDevice(row, types, offsetSize);
+                     printRowDevice(row, types, offsetSize);
                 }
             } else if (resType == RESTYPE_FLT) {
                 float x = *(float *) res;
                 printf("Value of expression for row (%d) is : %f\n", i, x);
                 if (x != 0) {
-                    // printRowDevice(row, types, offsetSize);
+                     printRowDevice(row, types, offsetSize);
                 }
             } else {
                 printf("Res Type is : %s\n", res);

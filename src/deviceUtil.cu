@@ -12,38 +12,35 @@
 void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType);
 
 __device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
-    // int start =  0;
-    // char buff[100];
-    // int buffStart = 0;
-    // for (int i = 0; i < numCols; i++, start += colTypes[i].size) {
-    //     switch (colTypes->type) {
-    //         case TYPE_INT: {
-    //             int temp = *((int *) ((char *) row + start));
-    //             buffStart += sprintf(buff + buffStart, "%d", temp);
-    //             break;
-    //         }
-    //         case TYPE_FLOAT: {
-    //             float temp = *((float *) ((char *) row + start));
-    //             buffStart += sprintf(buff + buffStart, "%f", temp);
-    //             break;
-    //         }
-    //         case TYPE_BOOL:
-    //             break;
-    //         case TYPE_VARCHAR: {
-    //             char *temp = (char *) row + start;
-    //             buffStart += sprintf(buff + buffStart, "%s", temp);
-    //             break;
-    //         }
-    //         case TYPE_DATETIME:
-    //             break;
-    //         case TYPE_INVALID:
-    //             break;
-    //     }
-    //     if (i != numCols - 1) {
-    //         buffStart += sprintf(buff + buffStart, ", ");
-    //     }
-    // }
-    // printf("%s\n", buff);
+     int start =  0;
+     char buff[100];
+     int buffStart = 0;
+     for (int i = 0; i < numCols; i++, start += colTypes[i].size) {
+         switch (colTypes->type) {
+             case TYPE_INT: {
+                 int temp = *((int *) ((char *) row + start));
+                 buffStart += appendInt(buff + buffStart, temp);
+                 break;
+             }
+             case TYPE_FLOAT: {
+                 float temp = *((float *) ((char *) row + start));
+                 buffStart += appendFlt(buff + buffStart, temp);
+                 break;
+             }
+             case TYPE_VARCHAR: {
+                 char *temp = (char *) row + start;
+                 buffStart += appendStr(buff + buffStart, temp);
+                 break;
+             }
+             case TYPE_INVALID:
+                 break;
+         }
+         if (i != numCols - 1) {
+             buffStart += appendStr(buff + buffStart, ", ");
+         }
+     }
+     buff[buffStart] = '\0';
+     printf("%s\n", buff);
 }
 
 __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType) {
@@ -293,6 +290,24 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                 }
                 break;
             }
+            case OPERATOR_MO: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(float));
+                    int lhs, rhs;
+                    lhs = *(int *) lres;
+                    rhs = *(int *) rres;
+                    *temp = lhs % rhs;
+                    resArr[index] = temp;
+                }
+                break;
+            }
+
             default:
                 printf("Not yet implemented");
         }
