@@ -55,8 +55,7 @@ Data::~Data() {
     if(writeHappened){
         remove(utils::getDataFileName(tableName).c_str());
         rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
-    }
-    else
+    } else
         remove(utils::getTempFileName(tableName).c_str());
 }
 

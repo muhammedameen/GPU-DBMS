@@ -47,7 +47,7 @@ __device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
 }
 
 __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType) {
-    const int MAX_DEPTH = 10;
+    const int MAX_DEPTH = 50;
     int *exprStack = (int *) malloc(sizeof(int) * MAX_DEPTH);
     exprStack[0] = 0;        // Push Expr of 0
     bool *solved = (bool *) malloc(sizeof(bool) * 100);
@@ -73,6 +73,18 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                 int *temp = (int *) malloc(sizeof(int));
                 *temp = expr->iVal;
                 resArr[index] = temp;
+                break;
+            }
+            case CONSTANT_FLT: {
+                solved[index] = true;
+                resTypeArr[index] = RESTYPE_FLT;
+                int *temp = (int *) malloc(sizeof(float));
+                *temp = expr->fVal;
+                resArr[index] = temp;
+                break;
+            }
+            case CONSTANT_STR:{
+
                 break;
             }
             case OPERATOR_PL: {
@@ -113,6 +125,110 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                         lhs = *(int *) lres;
                         rhs = *(int *) rres;
                         *temp = lhs + rhs;
+                        resArr[index] = temp;
+                    }
+                } else {
+                    // push this
+                    // push ALL children
+                    exprStack[count] = index;
+                    ++count;
+                    exprStack[count] = expr->childLeft;
+                    ++count;
+                    exprStack[count] = expr->childRight;
+                    ++count;
+                }
+                break;
+            }
+            case OPERATOR_MI: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_FLT;
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs - rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs - rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs - rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int *temp = (int *)malloc(sizeof(float));
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs - rhs;
+                        resArr[index] = temp;
+                    }
+                } else {
+                    // push this
+                    // push ALL children
+                    exprStack[count] = index;
+                    ++count;
+                    exprStack[count] = expr->childLeft;
+                    ++count;
+                    exprStack[count] = expr->childRight;
+                    ++count;
+                }
+                break;
+            }
+            case OPERATOR_MU: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_FLT;
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs * rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs * rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs * rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int *temp = (int *)malloc(sizeof(float));
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs * rhs;
                         resArr[index] = temp;
                     }
                 } else {

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 #include "ColType.cuh"
+#include "Metadata.cuh"
 
 class utils {
 public:
