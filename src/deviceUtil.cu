@@ -218,7 +218,7 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                         resArr[index] = temp;
                     } else {
                         resTypeArr[index] = RESTYPE_INT;
-                        int *temp = (int *)malloc(sizeof(float));
+                        int *temp = (int *)malloc(sizeof(int));
                         int lhs, rhs;
                         lhs = *(int *) lres;
                         rhs = *(int *) rres;
@@ -261,11 +261,214 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                         resArr[index] = temp;
                     } else {
                         resTypeArr[index] = RESTYPE_INT;
-                        int *temp = (int *)malloc(sizeof(float));
+                        int *temp = (int *)malloc(sizeof(int));
                         int lhs, rhs;
                         lhs = *(int *) lres;
                         rhs = *(int *) rres;
                         *temp = lhs * rhs;
+                        resArr[index] = temp;
+                    }
+                }
+                break;
+            }
+            case OPERATOR_DI: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_FLT;
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs / rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs / rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        float *temp = (float *)malloc(sizeof(float));
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs / rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int *temp = (int *)malloc(sizeof(int));
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs / rhs;
+                        resArr[index] = temp;
+                    }
+                }
+                break;
+            }
+            case OPERATOR_GT: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(int));
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs > rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs > rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs > rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs > rhs;
+                        resArr[index] = temp;
+                    }
+                }
+                break;
+            }
+            case OPERATOR_GE: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(int));
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs >= rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs >= rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs >= rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs >= rhs;
+                        resArr[index] = temp;
+                    }
+                }
+                break;
+            }
+            case OPERATOR_LT: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(int));
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs < rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs < rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs < rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs < rhs;
+                        resArr[index] = temp;
+                    }
+                }
+                break;
+            }
+            case OPERATOR_LE: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(int));
+                    if (ltype == RESTYPE_FLT && rtype == RESTYPE_FLT) {
+                        float lhs, rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs <= rhs;
+                        resArr[index] = temp;
+                    } else if (ltype == RESTYPE_FLT) {
+                        float lhs;
+                        int rhs;
+                        lhs = *(float *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs <= rhs;
+                        resArr[index] = temp;
+                    } else if (rtype == RESTYPE_FLT) {
+                        int lhs;
+                        float rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(float *) rres;
+                        *temp = lhs <= rhs;
+                        resArr[index] = temp;
+                    } else {
+                        resTypeArr[index] = RESTYPE_INT;
+                        int lhs, rhs;
+                        lhs = *(int *) lres;
+                        rhs = *(int *) rres;
+                        *temp = lhs <= rhs;
                         resArr[index] = temp;
                     }
                 }
@@ -279,7 +482,7 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                     void *lres = resArr[expr->childLeft];
                     void *rres = resArr[expr->childRight];
                     resTypeArr[index] = RESTYPE_INT;
-                    int *temp = (int *)malloc(sizeof(float));
+                    int *temp = (int *)malloc(sizeof(int));
                     int lhs, rhs;
                     lhs = *(int *) lres;
                     rhs = *(int *) rres;
