@@ -31,4 +31,10 @@ __device__ int myStrncmp(const char *str_a, const char *str_b, unsigned len = 25
 __device__ int myStrlen(const char *str);
 
 __device__ void printRowDevice(void *row, ColType *colTypes, int numCols);
+
+__device__ int appendInt(char *data, int i);
+
+__device__ int appendFlt(char *data, float f);
+
+__device__ int appendStr(char *data, char *str);
 #endif //DBASE_DEVICEUTIL_CUH

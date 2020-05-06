@@ -59,6 +59,10 @@ public:
     static void printRow(void *row, std::vector<ColType> &cols);
 
     static void printMultiple(void *row, std::vector<ColType> &cols, int rowSize, int numRows);
+
+
+
+
 };
 
 
