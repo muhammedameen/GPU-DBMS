@@ -4,46 +4,38 @@
 
 #include "deviceUtil.cuh"
 
-// __device__ whereExpr *exprArr;
-// __device__ ColType *types;
-// __device__ int *offset;
-// __device__ int whereExprSize;
-
-void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType);
+__device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType);
 
 __device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
-    // int start =  0;
-    // char buff[100];
-    // int buffStart = 0;
-    // for (int i = 0; i < numCols; i++, start += colTypes[i].size) {
-    //     switch (colTypes->type) {
-    //         case TYPE_INT: {
-    //             int temp = *((int *) ((char *) row + start));
-    //             buffStart += sprintf(buff + buffStart, "%d", temp);
-    //             break;
-    //         }
-    //         case TYPE_FLOAT: {
-    //             float temp = *((float *) ((char *) row + start));
-    //             buffStart += sprintf(buff + buffStart, "%f", temp);
-    //             break;
-    //         }
-    //         case TYPE_BOOL:
-    //             break;
-    //         case TYPE_VARCHAR: {
-    //             char *temp = (char *) row + start;
-    //             buffStart += sprintf(buff + buffStart, "%s", temp);
-    //             break;
-    //         }
-    //         case TYPE_DATETIME:
-    //             break;
-    //         case TYPE_INVALID:
-    //             break;
-    //     }
-    //     if (i != numCols - 1) {
-    //         buffStart += sprintf(buff + buffStart, ", ");
-    //     }
-    // }
-    // printf("%s\n", buff);
+    int start =  0;
+    char buff[100];
+    int buffStart = 0;
+    for (int i = 0; i < numCols; start += colTypes[i].size, i++) {
+        switch (colTypes[i].type) {
+            case TYPE_INT: {
+                int temp = *((int *) ((char *) row + start));
+                buffStart += appendInt(buff + buffStart, temp);
+                break;
+            }
+            case TYPE_FLOAT: {
+                float temp = *((float *) ((char *) row + start));
+                buffStart += appendFlt(buff + buffStart, temp);
+                break;
+            }
+            case TYPE_VARCHAR: {
+                char *temp = (char *) row + start;
+                buffStart += appendStr(buff + buffStart, temp);
+                break;
+            }
+            default:
+                printf("Not yet implemented");
+        }
+        if (i != numCols - 1) {
+            buffStart += appendStr(buff + buffStart, ", ");
+        }
+    }
+    buff[buffStart] = 0;
+    printf("%s\n", buff);
 }
 
 __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr, void *&res, int &resType) {
@@ -62,20 +54,6 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
         whereExpr *expr = &exprArr[index];
         --count;
         // check if children are solved; if solved evaluate current node; else push children
-        if(!solved[index]){
-            // push this and ALL children
-            exprStack[count] = index;
-            ++count;
-            if (expr->childLeft != -1) {
-                exprStack[count] = expr->childLeft;
-                ++count;
-            }
-            if (expr->childRight != -1) {
-                exprStack[count] = expr->childRight;
-                ++count;
-            }
-            continue;
-        }
         switch (expr->type) {
             case CONSTANT_ERR:
                 printf("Error");
@@ -295,6 +273,20 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
             }
             default:
                 printf("Not yet implemented");
+        }
+        if(!solved[index]){
+            // push this and ALL children
+            exprStack[count] = index;
+            ++count;
+            if (expr->childLeft != -1) {
+                exprStack[count] = expr->childLeft;
+                ++count;
+            }
+            if (expr->childRight != -1) {
+                exprStack[count] = expr->childRight;
+                ++count;
+            }
+            continue;
         }
     }
     // Result and restype are stored in resArr[0] and resArrType[0]
@@ -1165,7 +1157,7 @@ __device__ int appendFlt(char *data, float f) {
     return j;
 }
 
-__device__ int appendStr(char *data, char *str) {
+__device__ int appendStr(char *data, const char *str) {
     int j=0;
     while(str[j] != '\0'){
         data[j] = str[j];

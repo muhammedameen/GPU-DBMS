@@ -36,5 +36,5 @@ __device__ int appendInt(char *data, int i);
 
 __device__ int appendFlt(char *data, float f);
 
-__device__ int appendStr(char *data, char *str);
+__device__ int appendStr(char *data, const char *str);
 #endif //DBASE_DEVICEUTIL_CUH

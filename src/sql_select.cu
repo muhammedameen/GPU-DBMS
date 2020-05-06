@@ -7,45 +7,31 @@
 #define NUM_THREADS 512
 
 __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows) {
-    if (threadIdx.x == 0) {
-        // for (int i = 0; i < offsetSize; i++) {
-        //     printf("%d ", types[i].size);
-        // }
-        // printf("\n");
-        // for (int i = 0; i < 3; i++) {
-        //     auto leaf = exprs[i];
-        //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
-        //            leaf.sVal, leaf.childLeft, leaf.childRight);
-        // }
-        // printf("Rowsize: %d\n", rowSize);
-        // printf("%f\n", *(float *)((char *)data + rowSize + offset[3]));
-    }
-
     void *res;
     int resType = 1;
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
     unsigned int start = rowsPerBlock * threadIdx.x;
     unsigned int end = rowsPerBlock * (threadIdx.x + 1);
-    for (unsigned int i = start; i < end; i++) {
 
+    for (unsigned int i = start; i < end; i++) {
         void *row = (char *)data + i * rowSize;
         // eval(row, offset, types, exprs, 0, res, resType);
         eval(row, offset, types, exprs, res, resType, i, i < numRows);
         if (i < numRows) {
             if (resType == RESTYPE_INT) {
                 int x = *(int *) res;
-                printf("Value of expression for row(%d) is : %d\n", i, x);
+                // printf("Value of expression for row(%d) is : %d\n", i, x);
                 if (x != 0) {
-                    // printRowDevice(row, types, offsetSize);
+                    printRowDevice(row, types, offsetSize);
                 }
             } else if (resType == RESTYPE_FLT) {
                 float x = *(float *) res;
-                printf("Value of expression for row (%d) is : %f\n", i, x);
+                // printf("Value of expression for row (%d) is : %f\n", i, x);
                 if (x != 0) {
-                    // printRowDevice(row, types, offsetSize);
+                    printRowDevice(row, types, offsetSize);
                 }
             } else {
-                printf("Res Type is : %s\n", res);
+                // printf("Res Type is : %s\n", res);
             }
             free(res);
         }
@@ -180,7 +166,7 @@ void sql_select::execute(std::string &query) {
             int numRows = d.read(data);
 
             // printing data in table
-            utils::printMultiple(data, d.mdata.datatypes, d.mdata.rowSize, d.mdata.rowCount);
+            // utils::printMultiple(data, d.mdata.datatypes, d.mdata.rowSize, d.mdata.rowCount);
 
             cudaMalloc(&data_d, d.chunkSize * rowSize);
             while (numRows > 0) {
