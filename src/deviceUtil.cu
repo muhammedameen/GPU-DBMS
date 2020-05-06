@@ -271,6 +271,23 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
                 }
                 break;
             }
+            case OPERATOR_MO: {
+                if (solved[expr->childLeft] && solved[expr->childRight]) {
+                    solved[index] = true;
+                    int ltype = resTypeArr[expr->childLeft];
+                    int rtype = resTypeArr[expr->childRight];
+                    void *lres = resArr[expr->childLeft];
+                    void *rres = resArr[expr->childRight];
+                    resTypeArr[index] = RESTYPE_INT;
+                    int *temp = (int *)malloc(sizeof(float));
+                    int lhs, rhs;
+                    lhs = *(int *) lres;
+                    rhs = *(int *) rres;
+                    *temp = lhs % rhs;
+                    resArr[index] = temp;
+                }
+                break;
+            }
             default:
                 printf("Not yet implemented");
         }
