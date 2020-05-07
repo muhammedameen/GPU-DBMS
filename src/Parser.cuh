@@ -15,6 +15,7 @@
 #include "sql_select.cuh"
 #include "sql_insert.cuh"
 #include "sql_update.cuh"
+#include "sql_delete.cuh"
 
 
 class Parser {

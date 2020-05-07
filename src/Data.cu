@@ -22,6 +22,8 @@ int Data::readRow(void *data) {
 }
 
 int Data::writeRow(void *data) {
+    writeHappened = true;
+    mdata.rowCount += 1;
     o.write(static_cast<const char *>(data), mdata.rowSize);
     return 0;
 }
