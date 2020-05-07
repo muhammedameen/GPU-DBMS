@@ -669,3 +669,39 @@ __device__ int appendStr(char *data, const char *str) {
     }
     return j;
 }
+
+
+__device__ bool isNull(int *i){
+    return *i == INT_MIN;
+}
+
+__device__ bool isNull(char *data, int size){
+    int i=0;
+    while(i<size-1){
+        if(data[i] != '1')
+            return false;
+        i++;
+    }
+    return data[size - 1] == '0';
+}
+
+__device__ bool isNull(float *f){
+    return isnan(*f);
+}
+
+__device__ int getNullInt(){
+    return INT_MIN;
+}
+
+__device__ float getNullFlt(){
+    return NAN;
+}
+
+__device__ void getNullStr(char *data, int size){
+    int i=0;
+    while(i < size-1){
+        data[i] = '1';
+        i++;
+    }
+    data[size-1] = '0';
+}
