@@ -42,6 +42,7 @@ int Data::read (void *data){
 }
 
 void Data::restartRead(){
+    readCount = 0;
     f.seekg(0, std::ios::beg);
 }
 
