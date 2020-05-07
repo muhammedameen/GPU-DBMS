@@ -5,6 +5,7 @@
 #include "Data.cuh"
 
 Data::Data(std::string tableName) {
+    joinObject = false;
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
@@ -40,6 +41,10 @@ int Data::read (void *data){
         return -1;
 }
 
+void Data::restartRead(){
+    f.seekg(0, std::ios::beg);
+}
+
 int Data::write(void *data, int numBytes){
     writeHappened = true;
     if(!o.write((char *)data, numBytes))
@@ -50,6 +55,10 @@ int Data::write(void *data, int numBytes){
 
 Data::~Data() {
 //rename the temp file as data file
+    if(joinObject){
+        remove(utils::getDataFileName(tableName).c_str());
+        return;
+    }
     if(writeHappened){
         // printf("inside destructor");
         remove(utils::getDataFileName(tableName).c_str());
@@ -59,15 +68,25 @@ Data::~Data() {
 }
 
 Data::Data(const std::string& t1, const std::string& t2) {
+    joinObject = true;
     this->tableName = t1 + "_" + t2 + ".join";
     this->writeHappened = false;
     // TODO: Change mdata to a new metadata of join of both tables
+    // create metadata for join table
     this->mdata = Metadata(t1);
+    mdata.tableName = tableName;
+    mdata.dataFileName = utils::getDataFileName(tableName);
+    mdata.metadataFileName = utils::getMetadataFileName(tableName);
+    Metadata m2 = Metadata(t2);
+    for (int i=0; i<m2.columns.size(); i++){
+        mdata.append(m2.columns[i], m2.datatypes[i], m2.keyMap.find(m2.columns[i]) != m2.keyMap.end());
+    }
+    mdata.rowCount = 0;
     // This should work if the above line is fixed
     this->chunkSize = ((20 * 1024 * 1024) / mdata.rowSize); // read 50MB because we will need 20 + 20 + 20 * 20 total space while joining
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
-    this->o = std::ofstream(utils::getTempFileName(this->tableName), std::ios::binary);
+    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
 

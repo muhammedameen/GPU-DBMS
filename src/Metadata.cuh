@@ -45,10 +45,10 @@ public:
     std::vector<std::string> columns;
     std::vector<ColType> datatypes;
     std::map<std::string, int> colMap;
-private:
-    bool valid;
     std::vector<std::string> keyCols;
     std::map<std::string, int> keyMap;
+private:
+    bool valid;
 };
 
 

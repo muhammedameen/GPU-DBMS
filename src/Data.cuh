@@ -31,8 +31,10 @@ public:
     Metadata mdata;
     // no of rows dealt as a chunk
     int chunkSize;
+    void restartRead();
 private:
     bool writeHappened;
+    bool joinObject;
     std::string tableName;
     std::ifstream f;
     std::ofstream o;

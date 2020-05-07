@@ -40,7 +40,7 @@ add_executable(dbase src/main.cu
         src/myExpr.cuh src/myExpr.cu
         src/deviceUtil.cu src/deviceUtil.cuh
         src/Data.cu src/Data.cuh
-        src/sql_insert.cu src/sql_insert.cuh src/ColType.cu src/ColType.cuh src/errorHandler.cuh src/sql_update.cu src/sql_update.cuh)
+        src/sql_insert.cu src/sql_insert.cuh src/ColType.cu src/ColType.cuh src/errorHandler.cuh src/sql_update.cu src/sql_update.cuh src/sql_delete.cu src/sql_delete.cuh)
 
 target_link_libraries(dbase "${CMAKE_HOME_DIRECTORY}/sql-parser/libsqlparser.so")
 
