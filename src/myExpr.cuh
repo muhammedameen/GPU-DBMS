@@ -2,14 +2,14 @@
 // Created by gautam on 27/04/20.
 //
 
-#ifndef DBASE_WHEREEXPR_CUH
-#define DBASE_WHEREEXPR_CUH
+#ifndef DBASE_MYEXPR_CUH
+#define DBASE_MYEXPR_CUH
 
 #include <cstring>
 #include <cstdlib>
 #include "../sql-parser/src/sql/Expr.h"
 
-enum whereExprType{
+enum myExprType{
     CONSTANT_ERR,
     CONSTANT_INT,
     CONSTANT_FLT,
@@ -33,27 +33,27 @@ enum whereExprType{
 };
 
 typedef struct {
-    whereExprType type;
+    myExprType type;
     int iVal;
     float fVal;
     char sVal[10];
     int childLeft;
     int childRight;
-} whereExpr;
+} myExpr;
 
-whereExpr *newExpr(whereExprType type, long intVal);
+myExpr *newExpr(myExprType type, long intVal);
 
-whereExpr *newExpr(whereExprType type, float fVal);
+myExpr *newExpr(myExprType type, float fVal);
 
-whereExpr *newExpr(whereExprType type, char *sVal);
+myExpr *newExpr(myExprType type, char *sVal);
 
-whereExpr *newExpr(whereExprType type);
+myExpr *newExpr(myExprType type);
 
-void freeExpr(whereExpr *expr);
+void freeExpr(myExpr *expr);
 
-void exprToVec(hsql::Expr *pExpr, std::vector<whereExpr> &vector, const std::vector<std::string>& colNames);
+void exprToVec(hsql::Expr *pExpr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames);
 
-whereExprType getOpType(hsql::Expr::OperatorType type, char opChar);
+myExprType getOpType(hsql::Expr::OperatorType type, char opChar);
 
 
-#endif //DBASE_WHEREEXPR_CUH
+#endif //DBASE_MYEXPR_CUH

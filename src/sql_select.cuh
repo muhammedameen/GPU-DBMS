@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "whereExpr.cuh"
+#include "myExpr.cuh"
 #include "Data.cuh"
 #include "deviceUtil.cuh"
 #include "Metadata.cuh"
@@ -23,8 +23,7 @@
 class sql_select {
 public:
     static void execute(std::string &query);
-
 };
 
-__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows);
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows);
 #endif //DBASE_SQL_SELECT_CUH

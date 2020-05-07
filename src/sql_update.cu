@@ -7,8 +7,8 @@
 #define NUM_THREADS 512
 
 __global__ void
-updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows,
-             const int *uIds, whereExpr *uExprs, int *uOffs, int numUpdates) {
+updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows,
+             const int *uIds, myExpr *uExprs, int *uOffs, int numUpdates) {
     void *res;
     int resType = 1;
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
@@ -17,78 +17,61 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
 
     void *tempRow = malloc(rowSize);
 
-
+    void *row;
+    bool flag;
     for (unsigned int i = start; i < end; ++i) {
-        void *row = (char *)data + i * rowSize;
-        // eval(row, offset, types, exprs, 0, res, resType);
-        eval(row, offset, types, exprs, res, resType, i < numRows);
-        if (i < numRows) {
-            bool flag = false;
-            if (resType == RESTYPE_INT) {
-                int x = *(int *) res;
-                // printf("Value of expression for row(%d) is : %d\n", i, x);
-                flag = x != 0;
-            } else if (resType == RESTYPE_FLT) {
-                float x = *(float *) res;
-                // printf("Value of expression for row (%d) is : %f\n", i, x);
-                flag = (x != 0);
-            } else {
-                // printf("Res Type is : %s\n", res);
-            }
-            free(res);
-            if (flag) {
-                // update row here
-                printf("Old: ");
-                printRowDevice(row, types, offsetSize);
-                memcpy(tempRow, row, rowSize);
-                for (int j = 0; j < numUpdates; ++j) {
-                    const int col = uIds[j];
-                    // printf("Col Id: %d", col);
-                    whereExpr *uExpr = uExprs + uOffs[j];
-                    eval(tempRow, offset, types, uExpr, res, resType, true);
-                    switch (types[col].type) {
-                        case TYPE_INT:{
-                            // ASSERT RESULT HAS TO BE INT
-                            if (resType == RESTYPE_INT) {
-                                int *x = (int *) ((char *) tempRow + offset[col]);
-                                *x = *(int *) res;
-                                // printf("row[%d]: col-%d updated value-%d\n", i, col, *(int *) res);
-                            }
-                            break;
-                        }
-                        case TYPE_FLOAT: {
-                            // RESULT CAN BE INT OR FLOAT
-                            if (resType == RESTYPE_INT) {
-                                float *x = (float *) ((char *) tempRow + offset[col]);
-                                *x = *(int *) res;
-                                // printf("row[%d]: col-%d updated value-%d\n", i, col, *(int *) res);
-                            } else if (resType == RESTYPE_FLT) {
-                                float *x = (float *) ((char *) tempRow + offset[col]);
-                                *x = *(float *) res;
-                                // printf("row[%d]: col-%d updated value-%f\n", i, col, *(float *) res);
-                            }
-                            break;
-                        }
-                        case TYPE_VARCHAR: {
-                            // RESULT HAS TO BE VARCHAR
-                            if (resType < 0 && -resType <= types[col].size) {
-                                char *x = (char *) tempRow + offset[col];
-                                int end = appendStr(x, (char *) res);
-                                x[end] = 0;
-                                // printf("row[%d]: col-%d updated value-%s\n", i, col, (char *) res);
-                            }
-                            break;
-                        }
-                        default:
-                            printf("Not implemented");
-                            break;
+        if (i >= numRows) break;
+        row = (char *)data + i * rowSize;
+        eval(row, offset, types, exprs, res, resType);
+        flag = false;
+        if (resType == RESTYPE_INT) {
+            flag = *(int *) res != 0;
+        } else if (resType == RESTYPE_FLT) {
+            flag = *(float *) res != 0;
+        }
+        free(res);
+        if (!flag) continue;
+        // update row here
+        memcpy(tempRow, row, rowSize);
+        for (int j = 0; j < numUpdates; ++j) {
+            const int col = uIds[j];
+            myExpr *uExpr = uExprs + uOffs[j];
+            eval(tempRow, offset, types, uExpr, res, resType);
+            switch (types[col].type) {
+                case TYPE_INT:{
+                    // ASSERT RESULT HAS TO BE INT
+                    if (resType == RESTYPE_INT) {
+                        int *x = (int *) ((char *) tempRow + offset[col]);
+                        *x = *(int *) res;
                     }
+                    break;
                 }
-                memcpy(row, tempRow, rowSize);
-                printf("New: ");
-                printRowDevice(row, types, offsetSize);
+                case TYPE_FLOAT: {
+                    // RESULT CAN BE INT OR FLOAT
+                    if (resType == RESTYPE_INT) {
+                        float *x = (float *) ((char *) tempRow + offset[col]);
+                        *x = *(int *) res;
+                    } else if (resType == RESTYPE_FLT) {
+                        float *x = (float *) ((char *) tempRow + offset[col]);
+                        *x = *(float *) res;
+                    }
+                    break;
+                }
+                case TYPE_VARCHAR: {
+                    // RESULT HAS TO BE VARCHAR
+                    if (resType < 0 && -resType <= types[col].size) {
+                        char *x = (char *) tempRow + offset[col];
+                        int resEnd = appendStr(x, (char *) res);
+                        x[resEnd] = 0;
+                    }
+                    break;
+                }
+                default:
+                    printf("Not implemented");
+                    break;
             }
         }
+        memcpy(row, tempRow, rowSize);
     }
 }
 
@@ -100,7 +83,7 @@ void sql_update::execute(std::string &query) {
     if (result->isValid()) {
         const auto *stmt = (const hsql::UpdateStatement *) result->getStatement(0);
         tableName = stmt->table->name;
-        std::vector<whereExpr> flattenedExpr;
+        std::vector<myExpr> flattenedExpr;
         Data d(tableName);
         exprToVec(stmt->where, flattenedExpr, d.mdata.columns);
 
@@ -115,9 +98,9 @@ void sql_update::execute(std::string &query) {
 
         cudaMalloc(&type_d, sizeof(ColType) * numCols);
         cudaMemcpy(type_d, &d.mdata.datatypes[0], sizeof(ColType) * numCols, cudaMemcpyHostToDevice);
-        whereExpr *where_d;
-        cudaMalloc(&where_d, sizeof(whereExpr) * flattenedExpr.size());
-        cudaMemcpy(where_d, &flattenedExpr[0], sizeof(whereExpr) * flattenedExpr.size(), cudaMemcpyHostToDevice);
+        myExpr *where_d;
+        cudaMalloc(&where_d, sizeof(myExpr) * flattenedExpr.size());
+        cudaMemcpy(where_d, &flattenedExpr[0], sizeof(myExpr) * flattenedExpr.size(), cudaMemcpyHostToDevice);
         int *offsets = (int *) malloc(sizeof(int) * (numCols + 1));
         offsets[0] = 0; //d.mdata.datatypes[0].size;
         for (int i = 1; i <= numCols; i++) {
@@ -128,7 +111,7 @@ void sql_update::execute(std::string &query) {
         cudaMemcpy(offsets_d, offsets, sizeof(int) * (numCols + 1), cudaMemcpyHostToDevice);
         int numRows = d.read(data);
         cudaMalloc(&data_d, d.chunkSize * rowSize);
-        std::vector<std::vector<whereExpr>> updateExprs(stmt->updates->size());
+        std::vector<std::vector<myExpr>> updateExprs(stmt->updates->size());
         std::vector<int> colIds(stmt->updates->size());
         for (int i = 0; i < stmt->updates->size(); ++i) {
             hsql::UpdateClause *clause = stmt->updates->at(i);
@@ -139,16 +122,16 @@ void sql_update::execute(std::string &query) {
         cudaMalloc(&updateIds_d, sizeof(int) * colIds.size());
         cudaMemcpy(updateIds_d, &colIds[0], sizeof(int) * colIds.size(), cudaMemcpyHostToDevice);
 
-        whereExpr *updateExprs_d;
+        myExpr *updateExprs_d;
         int total = 0;
         std::vector<int> updateOffsets(updateExprs.size());
         for (int i = 0; i < updateExprs.size(); ++i) {
             updateOffsets[i] = total;
             total += updateExprs[i].size();
         }
-        cudaMalloc(&updateExprs_d, sizeof(whereExpr) * total);
+        cudaMalloc(&updateExprs_d, sizeof(myExpr) * total);
         for (int i = 0; i < updateExprs.size(); ++i) {
-            cudaMemcpy(updateExprs_d + updateOffsets[i], &updateExprs[i][0], sizeof(whereExpr) * updateExprs[i].size(),
+            cudaMemcpy(updateExprs_d + updateOffsets[i], &updateExprs[i][0], sizeof(myExpr) * updateExprs[i].size(),
                        cudaMemcpyHostToDevice);
         }
         int *updateOffsets_d;

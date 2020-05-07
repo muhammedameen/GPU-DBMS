@@ -7,7 +7,7 @@
 
 // #include <cuda_runtime.h>
 
-#include "whereExpr.cuh"
+#include "myExpr.cuh"
 #include "ColType.cuh"
 
 #pragma hd_warning_disable
@@ -17,12 +17,7 @@ const int RESTYPE_FLT = 2;
 const int RESTYPE_DTM = 3;
 const int RESTYPE_BOOL = 4;
 
-// __device__ void
-// eval(void *row, int *offset, ColType types[], whereExpr exprArr[], int currPos,
-//          void *&res, int &resType);
-
-__device__ void eval(void *row, int *offset, ColType types[], whereExpr *exprArr,
-     void *&res, int &resType, bool flag);
+__device__ void eval(void *row, int *offset, ColType *types, myExpr *exprArr, void *&res, int &resType);
 
 __device__ void evalUtil(void *row, int currPos, void *&res, int &resType);
 

@@ -37,7 +37,7 @@ add_executable(dbase src/main.cu
         ${parser_src_sql_source}
 
         src/sql_select.cu src/sql_select.cuh
-        src/whereExpr.cuh src/whereExpr.cu
+        src/myExpr.cuh src/myExpr.cu
         src/deviceUtil.cu src/deviceUtil.cuh
         src/Data.cu src/Data.cuh
         src/sql_insert.cu src/sql_insert.cuh src/ColType.cu src/ColType.cuh src/errorHandler.cuh src/sql_update.cu src/sql_update.cuh)
@@ -81,5 +81,5 @@ set_target_properties(
 #        sql-parser/src/SQLParserResult.cpp sql-parser/src/SQLParserResult.h
 #        ${parser_src_parser_source}
 #        ${parser_src_sql_source}
-#        src/sql_select.cpp src/sql_select.h src/whereExpr.h src/whereExpr.cpp src/deviceUtil.cpp src/deviceUtil.h src/Data.cpp src/Data.h src/sql_insert.cpp src/sql_insert.h)
+#        src/sql_select.cpp src/sql_select.h src/myExpr.h src/myExpr.cpp src/deviceUtil.cpp src/deviceUtil.h src/Data.cpp src/Data.h src/sql_insert.cpp src/sql_insert.h)
 #

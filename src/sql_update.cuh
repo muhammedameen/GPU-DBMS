@@ -5,7 +5,7 @@
 #ifndef DBASE_SQL_UPDATE_CUH
 #define DBASE_SQL_UPDATE_CUH
 
-#include "whereExpr.cuh"
+#include "myExpr.cuh"
 #include "Data.cuh"
 #include "deviceUtil.cuh"
 #include "Metadata.cuh"
@@ -23,10 +23,10 @@ public:
 
 typedef struct UpdateExpr {
     int colId;
-    whereExpr *expr;
+    myExpr *expr;
 } UpdateExpr;
 
 __global__ void
-updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, whereExpr *exprs, int numRows,
-             int *pInt, whereExpr *ptr, int *pInt1);
+updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows,
+             int *pInt, myExpr *ptr, int *pInt1);
 #endif //DBASE_SQL_UPDATE_CUH

@@ -2,10 +2,10 @@
 // Created by gautam on 28/04/20.
 //
 
-#include "whereExpr.cuh"
+#include "myExpr.cuh"
 
-whereExpr *newExpr(whereExprType type, long intVal) {
-    auto *expr = new whereExpr;
+myExpr *newExpr(myExprType type, long intVal) {
+    auto *expr = new myExpr;
     expr->type = type;
     expr->iVal = (int)intVal;
     expr->fVal = 0.0f;
@@ -15,8 +15,8 @@ whereExpr *newExpr(whereExprType type, long intVal) {
     return expr;
 }
 
-whereExpr * newExpr(whereExprType type, float fVal){
-    auto *expr = new whereExpr;
+myExpr * newExpr(myExprType type, float fVal){
+    auto *expr = new myExpr;
     expr->type = type;
     expr->iVal = 0;
     expr->fVal = fVal;
@@ -26,8 +26,8 @@ whereExpr * newExpr(whereExprType type, float fVal){
     return expr;
 }
 
-whereExpr * newExpr(whereExprType type, char *sVal){
-    auto *expr = new whereExpr;
+myExpr * newExpr(myExprType type, char *sVal){
+    auto *expr = new myExpr;
     expr->type = type;
     expr->iVal = 0;
     expr->fVal = 0.0f;
@@ -38,8 +38,8 @@ whereExpr * newExpr(whereExprType type, char *sVal){
     return expr;
 }
 
-whereExpr *newExpr(whereExprType type){
-    auto *expr = new whereExpr;
+myExpr *newExpr(myExprType type){
+    auto *expr = new myExpr;
     expr->type = type;
     expr->iVal = 0;
     expr->fVal = 0.0f;
@@ -49,11 +49,11 @@ whereExpr *newExpr(whereExprType type){
     return expr;
 }
 
-void freeExpr(whereExpr *expr){
+void freeExpr(myExpr *expr){
     free(expr);
 }
 
-void exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector, const std::vector<std::string>& colNames) {
+void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames) {
     switch (expr->type) {
         case hsql::kExprLiteralFloat:
             vector.push_back(*newExpr(CONSTANT_FLT, expr->fval));
@@ -82,7 +82,7 @@ void exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector, const std::vect
             printf("What is this 2 Electric Boogaloo");
             break;
         case hsql::kExprOperator: {
-            whereExpr *temp = newExpr(getOpType(expr->opType, expr->opChar));
+            myExpr *temp = newExpr(getOpType(expr->opType, expr->opChar));
             vector.push_back(*temp);
             int curr = (int)vector.size() - 1;
             vector[curr].childLeft = vector.size();
@@ -99,7 +99,7 @@ void exprToVec(hsql::Expr *expr, std::vector<whereExpr> &vector, const std::vect
     }
 }
 
-whereExprType getOpType(hsql::Expr::OperatorType type, char opChar) {
+myExprType getOpType(hsql::Expr::OperatorType type, char opChar) {
     // TODO: Change Error to correct Constants
     switch (type) {
         case hsql::Expr::NONE:

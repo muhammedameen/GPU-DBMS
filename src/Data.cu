@@ -8,11 +8,9 @@ Data::Data(std::string tableName) {
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
-    chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize * 1024)) * 1024;
+    chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize));    // read 20 MB
     readCount = 0;
-    writeHappened = false;
     f.open(utils::getDataFileName(tableName), std::ios::binary);
-    f.seekg(0, std::ios::beg);
     o.open(utils::getTempFileName(tableName), std::ios::binary);
 }
 
@@ -58,6 +56,18 @@ Data::~Data() {
         rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
     } else
         remove(utils::getTempFileName(tableName).c_str());
+}
+
+Data::Data(const std::string& t1, const std::string& t2) {
+    this->tableName = t1 + "_" + t2 + ".join";
+    this->writeHappened = false;
+    // TODO: Change mdata to a new metadata of join of both tables
+    this->mdata = Metadata(t1);
+    // This should work if the above line is fixed
+    this->chunkSize = ((20 * 1024 * 1024) / mdata.rowSize); // read 50MB because we will need 20 + 20 + 20 * 20 total space while joining
+    this->readCount = 0;
+    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    this->o = std::ofstream(utils::getTempFileName(this->tableName), std::ios::binary);
 }
 
 

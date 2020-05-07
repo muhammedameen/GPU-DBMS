@@ -11,14 +11,17 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include <stdio.h>
+#include <cstdio>
 
 #include "utils.cuh"
 #include "Metadata.cuh"
 
 class Data {
 public:
+
     explicit Data(std::string tableName);
+    Data(const std::string& t1, const std::string& t2);
+
     int read(void *data);
     int readRow(void *data);
     int writeRow(void *data);
