@@ -53,6 +53,7 @@ int Data::write(void *data, int numBytes){
 Data::~Data() {
 //rename the temp file as data file
     if(writeHappened){
+        // printf("inside destructor");
         remove(utils::getDataFileName(tableName).c_str());
         rename(utils::getTempFileName(tableName).c_str(), utils::getDataFileName(tableName).c_str());
     } else

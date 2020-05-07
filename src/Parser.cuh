@@ -14,6 +14,8 @@
 #include "sql_truncate.cuh"
 #include "sql_select.cuh"
 #include "sql_insert.cuh"
+#include "sql_update.cuh"
+
 
 class Parser {
 private:

@@ -26,7 +26,7 @@ void Parser::parse(std::string query) {
     } else if (type == SELECT) {
         sql_select::execute(query);
     } else if (type == UPDATE) {
-        // UpdateClass.execute(query);
+        sql_update::execute(query);
     } else if (type == DELETE) {
         // DeleteClass.execute(query);
     }

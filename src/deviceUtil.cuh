@@ -22,7 +22,7 @@ const int RESTYPE_BOOL = 4;
 //          void *&res, int &resType);
 
 __device__ void eval(void *row, int *offset, ColType types[], whereExpr *exprArr,
-     void *&res, int &resType, int tid, bool flag);
+     void *&res, int &resType, bool flag);
 
 __device__ void evalUtil(void *row, int currPos, void *&res, int &resType);
 

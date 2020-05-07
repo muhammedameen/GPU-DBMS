@@ -477,8 +477,8 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
             case OPERATOR_MO: {
                 if (solved[expr->childLeft] && solved[expr->childRight]) {
                     solved[index] = true;
-                    int ltype = resTypeArr[expr->childLeft];
-                    int rtype = resTypeArr[expr->childRight];
+                    // int ltype = resTypeArr[expr->childLeft];
+                    // int rtype = resTypeArr[expr->childRight];
                     void *lres = resArr[expr->childLeft];
                     void *rres = resArr[expr->childRight];
                     resTypeArr[index] = RESTYPE_INT;
@@ -523,22 +523,22 @@ __device__ void eval2(void *row, int *offset, ColType *types, whereExpr *exprArr
 
 __device__ void eval(void *row, int *offset2, ColType types2[],
           whereExpr *exprArr2,
-          void *&res, int &resType, int tid, bool flag) {
-    if (tid == 0) {
-        // offset = offset2;
-        // types = types2;
-        // exprArr = exprArr2;
-        // whereExprSize = sizeof(whereExpr);
-    }
-    __syncthreads();
-    if (tid == 1) {
-        printf("Inside eval.\n");
-        // for (int i = 0; i < 3; i++) {
-        //     auto leaf = exprArr2[i];
-        //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
-        //            leaf.sVal, leaf.childLeft, leaf.childRight);
-        // }
-    }
+          void *&res, int &resType, bool flag) {
+    // if (tid == 0) {
+    //     // offset = offset2;
+    //     // types = types2;
+    //     // exprArr = exprArr2;
+    //     // whereExprSize = sizeof(whereExpr);
+    // }
+    // __syncthreads();
+    // if (tid == 1) {
+    //     // printf("Inside eval.\n");
+    //     // for (int i = 0; i < 3; i++) {
+    //     //     auto leaf = exprArr2[i];
+    //     //     printf("TYPE: %d, ival: %d, fval: %f, sval: %s, left: %d, right: %d\n", leaf.type, leaf.iVal, leaf.fVal,
+    //     //            leaf.sVal, leaf.childLeft, leaf.childRight);
+    //     // }
+    // }
     if (flag) {
         // evalUtil(row, 0, res, resType);
         eval2(row, offset2, types2, exprArr2, res, resType);

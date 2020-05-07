@@ -16,7 +16,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
     for (unsigned int i = start; i < end; i++) {
         void *row = (char *)data + i * rowSize;
         // eval(row, offset, types, exprs, 0, res, resType);
-        eval(row, offset, types, exprs, res, resType, i, i < numRows);
+        eval(row, offset, types, exprs, res, resType, i < numRows);
         if (i < numRows) {
             if (resType == RESTYPE_INT) {
                 int x = *(int *) res;
