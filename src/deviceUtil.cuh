@@ -32,4 +32,17 @@ __device__ int appendInt(char *data, int i);
 __device__ int appendFlt(char *data, float f);
 
 __device__ int appendStr(char *data, const char *str);
+
+__device__ bool isNull(int *i);
+
+__device__ bool isNull(char *data, int size);
+
+__device__ bool isNull(float *f);
+
+__device__ int getNullInt();
+
+__device__ float getNullFlt();
+
+__device__ void getNullStr(char *data, int size);
+
 #endif //DBASE_DEVICEUTIL_CUH
