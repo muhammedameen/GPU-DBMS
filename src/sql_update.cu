@@ -15,6 +15,9 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
     unsigned int start = rowsPerBlock * threadIdx.x;
     unsigned int end = rowsPerBlock * (threadIdx.x + 1);
 
+    void *tempRow = malloc(rowSize);
+
+
     for (unsigned int i = start; i < end; ++i) {
         void *row = (char *)data + i * rowSize;
         // eval(row, offset, types, exprs, 0, res, resType);
@@ -23,11 +26,11 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
             bool flag = false;
             if (resType == RESTYPE_INT) {
                 int x = *(int *) res;
-                printf("Value of expression for row(%d) is : %d\n", i, x);
+                // printf("Value of expression for row(%d) is : %d\n", i, x);
                 flag = x != 0;
             } else if (resType == RESTYPE_FLT) {
                 float x = *(float *) res;
-                printf("Value of expression for row (%d) is : %f\n", i, x);
+                // printf("Value of expression for row (%d) is : %f\n", i, x);
                 flag = (x != 0);
             } else {
                 // printf("Res Type is : %s\n", res);
@@ -37,15 +40,17 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
                 // update row here
                 printf("Old: ");
                 printRowDevice(row, types, offsetSize);
+                memcpy(tempRow, row, rowSize);
                 for (int j = 0; j < numUpdates; ++j) {
-                    const int col = uIds[i];
+                    const int col = uIds[j];
+                    // printf("Col Id: %d", col);
                     whereExpr *uExpr = uExprs + uOffs[j];
-                    eval(row, offset, types, uExpr, res, resType, true);
+                    eval(tempRow, offset, types, uExpr, res, resType, true);
                     switch (types[col].type) {
                         case TYPE_INT:{
                             // ASSERT RESULT HAS TO BE INT
                             if (resType == RESTYPE_INT) {
-                                int *x = (int *) ((char *) row + offset[col]);
+                                int *x = (int *) ((char *) tempRow + offset[col]);
                                 *x = *(int *) res;
                                 // printf("row[%d]: col-%d updated value-%d\n", i, col, *(int *) res);
                             }
@@ -54,11 +59,11 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
                         case TYPE_FLOAT: {
                             // RESULT CAN BE INT OR FLOAT
                             if (resType == RESTYPE_INT) {
-                                float *x = (float *) ((char *) row + offset[col]);
+                                float *x = (float *) ((char *) tempRow + offset[col]);
                                 *x = *(int *) res;
                                 // printf("row[%d]: col-%d updated value-%d\n", i, col, *(int *) res);
                             } else if (resType == RESTYPE_FLT) {
-                                float *x = (float *) ((char *) row + offset[col]);
+                                float *x = (float *) ((char *) tempRow + offset[col]);
                                 *x = *(float *) res;
                                 // printf("row[%d]: col-%d updated value-%f\n", i, col, *(float *) res);
                             }
@@ -67,8 +72,9 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
                         case TYPE_VARCHAR: {
                             // RESULT HAS TO BE VARCHAR
                             if (resType < 0 && -resType <= types[col].size) {
-                                char *x = (char *) row + offset[col];
-                                appendStr(x, (char *) res);
+                                char *x = (char *) tempRow + offset[col];
+                                int end = appendStr(x, (char *) res);
+                                x[end] = 0;
                                 // printf("row[%d]: col-%d updated value-%s\n", i, col, (char *) res);
                             }
                             break;
@@ -78,6 +84,7 @@ updateKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *type
                             break;
                     }
                 }
+                memcpy(row, tempRow, rowSize);
                 printf("New: ");
                 printRowDevice(row, types, offsetSize);
             }
@@ -156,6 +163,7 @@ void sql_update::execute(std::string &query) {
             if (err != cudaSuccess) {
                 printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
             }
+            cudaMemcpy(data, data_d, rowSize * numRows, cudaMemcpyDeviceToHost);
             d.write(data, numRows * d.mdata.rowSize);
             numRows = d.read(data);
         }
