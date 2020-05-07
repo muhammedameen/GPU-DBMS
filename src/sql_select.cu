@@ -34,7 +34,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
 }
 
 __global__ void
-joinKernel(void *left, void *right, void *join, int joinType, myExpr *joinExpr, int *offset, int offsetSize, ColType *types, int rowSizeL, int rowSizeR, int numRowsL, int numRowsR,
+joinKernel(void *left, void *right, void *join, myExpr *joinExpr, int *offset, int offsetSize, ColType *types, int rowSizeL, int rowSizeR, int numRowsL, int numRowsR,
            unsigned int *numRowsRes) {
     if (threadIdx.x == 0) {
         *numRowsRes = 0;
@@ -67,6 +67,7 @@ joinKernel(void *left, void *right, void *join, int joinType, myExpr *joinExpr, 
         free(res);
         if (!flag) continue;
         // Add this row to new table
+        printRowDevice(row, types, offsetSize);
         old = atomicInc(numRowsRes, numRowsL * numRowsR);
         memcpy((char *) join + old * rowSizeRes, row, rowSizeRes);
     }
@@ -137,21 +138,62 @@ void sql_select::execute(std::string &query) {
                 //     // inprint("Join Condition", numIndent + 1);
                 //     // printExpression(table->join->condition, numIndent + 2);
                 d = new Data(table->join->left->name, table->join->right->name);
+
+                std::vector<myExpr> joinCondition;
+                exprToVec(table->join->condition, joinCondition, d->mdata.columns);
+                myExpr *joinCondition_d;
+                cudaMalloc(&joinCondition_d, joinCondition.size() * sizeof(myExpr));
+                cudaMemcpy(joinCondition_d, &joinCondition[0], sizeof(myExpr) * joinCondition.size(),
+                           cudaMemcpyHostToDevice);
+
+                std::vector<int> offsets(d->mdata.columns.size() + 1);
+                offsets[0] = 0;
+                for (int i = 1; i <= d->mdata.columns.size(); ++i) {
+                    offsets[i] = offsets[i - 1] + d->mdata.datatypes[i - 1].size;
+                }
+                int *offsets_d;
+                cudaMalloc(&offsets_d, sizeof(int) * ( d->mdata.columns.size() + 1));
+                cudaMemcpy(offsets_d, &offsets[0], sizeof(int) * (d->mdata.columns.size() + 1), cudaMemcpyHostToDevice);
+
+                ColType *type_d;
+                cudaMalloc(&type_d, sizeof(ColType) *  d->mdata.columns.size());
+                cudaMemcpy(type_d, &d->mdata.datatypes[0], sizeof(ColType) *  d->mdata.columns.size(), cudaMemcpyHostToDevice);
                 Data dL(table->join->left->name);
                 dL.chunkSize = d->chunkSize;
                 Data dR(table->join->right->name);
                 dR.chunkSize = d->chunkSize;
-                void *join = malloc(d->chunkSize * d->chunkSize * d->mdata.rowSize); // Upto n^2 rows can be stored
-                void *dataL = malloc(d->chunkSize * dL.mdata.rowSize);
-                void *dataR = malloc(d->chunkSize * dR.mdata.rowSize);
-                int bytesReadL = dL.read(dataL), bytesReadR;
-                // while (bytesReadL > 0) {
-                //
-                //     bytesReadR = dR.read(dataR);
-                //     while (bytesReadR > 0) {
-                //
-                //     }
-                // }
+                void *join = malloc(d->chunkSize * d->chunkSize * d->mdata.rowSize), *join_d; // Upto n^2 rows can be stored
+                void *dataL = malloc(d->chunkSize * dL.mdata.rowSize), *dataL_d;
+                void *dataR = malloc(d->chunkSize * dR.mdata.rowSize), *dataR_d;
+                cudaMalloc(&join_d, d->chunkSize * d->chunkSize * d->mdata.rowSize);
+                cudaMalloc(&dataL_d, dL.chunkSize * dL.mdata.rowSize);
+                cudaMalloc(&dataR_d, dR.chunkSize * dR.mdata.rowSize);
+                int rowsReadL = dL.read(dataL), rowsReadR;
+                cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
+                unsigned int numRowsJoin = 0;
+                while (rowsReadL > 0) {
+                    // TODO: implement resetRead()
+                    // dR.resetRead();
+                    rowsReadR = dR.read(dataR);
+                    cudaMemcpy(dataR_d, dataR, rowsReadR * dR.mdata.rowSize, cudaMemcpyHostToDevice);
+                    while (rowsReadR > 0) {
+                        joinKernel<<<1, 512>>>(dataL_d, dataR_d, join_d, joinCondition_d, offsets_d, d->mdata.columns.size(),
+                                               type_d, dL.mdata.rowSize, dR.mdata.rowSize, rowsReadL, rowsReadR,
+                                               &numRowsJoin);
+                        cudaDeviceSynchronize();
+                        cudaError_t err = cudaGetLastError();
+                        if (err != cudaSuccess) {
+                            printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+                        }
+                        cudaMemcpy(join, join_d, numRowsJoin, cudaMemcpyDeviceToHost);
+                        d->write(join, (int)numRowsJoin * d->mdata.rowSize);
+                        numRowsJoin = 0;
+                        rowsReadR = dR.read(dataR);
+                        cudaMemcpy(dataR_d, dataR, rowsReadR * dR.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    rowsReadL = dL.read(dataL);
+                    cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
+                }
                 break;
             }
             // case hsql::kTableCrossProduct:
@@ -164,8 +206,6 @@ void sql_select::execute(std::string &query) {
         if (stmt->whereClause != nullptr) {
             // Get where
             std::vector<myExpr> tree;
-            // printf("%s\n", tableNames[0].c_str());
-            // Data d(tableNames[0]);
 
             auto expr = stmt->whereClause;
             exprToVec(expr, tree, d->mdata.columns);
@@ -175,10 +215,10 @@ void sql_select::execute(std::string &query) {
             void *data = malloc(d->chunkSize * rowSize);
             void *data_d;
             int numCols = d->mdata.columns.size();
-            ColType *type_d;
             cudaSetDevice(0);
             cudaDeviceReset();
 
+            ColType *type_d;
             cudaMalloc(&type_d, sizeof(ColType) * numCols);
             cudaMemcpy(type_d, &d->mdata.datatypes[0], sizeof(ColType) * numCols, cudaMemcpyHostToDevice);
             myExpr *where_d;
@@ -213,6 +253,8 @@ void sql_select::execute(std::string &query) {
             }
 
             // Free all the data
+            d->~Data();
+            free(d);
             free(data);
             free(offsets);
             cudaFree(data_d);
