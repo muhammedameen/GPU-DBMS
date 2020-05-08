@@ -38,6 +38,7 @@ private:
     std::string tableName;
     std::ifstream f;
     std::ofstream o;
+    bool switchToRead();
 };
 
 
