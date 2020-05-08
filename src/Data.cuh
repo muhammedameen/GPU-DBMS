@@ -32,6 +32,7 @@ public:
     // no of rows dealt as a chunk
     int chunkSize;
     void restartRead();
+    void switchToRead();
 private:
     bool writeHappened;
     bool joinObject;

@@ -50,6 +50,8 @@ void Data::restartRead(){
 
 int Data::write(void *data, int numBytes){
     writeHappened = true;
+    if(joinObject)
+        mdata.rowCount += numBytes/mdata.rowSize;
     if(!o.write((char *)data, numBytes))
         return -1;
     else
@@ -89,7 +91,14 @@ Data::Data(const std::string& t1, const std::string& t2) {
     this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+//    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+}
+
+void Data::switchToRead(){
+    if(f.is_open())
+        f.close();
     this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    o.seekp(0, std::ios::beg);
 }
 
 

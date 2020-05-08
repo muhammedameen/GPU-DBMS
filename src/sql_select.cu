@@ -280,6 +280,7 @@ void sql_select::execute(std::string &query) {
                 printf("____________________________________________________");
                 d->switchToRead();
                 numRowsJoin = d->read(join);
+                printf("Rows Read : %d\n", numRowsJoin);
                 while (numRowsJoin > 0) {
                     cudaMemcpy(join_d, join, numRowsJoin * d->mdata.rowSize, cudaMemcpyHostToDevice);
                     selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),

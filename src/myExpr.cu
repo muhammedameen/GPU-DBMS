@@ -57,20 +57,6 @@ void freeExpr(myExpr *expr){
     free(expr);
 }
 
-__global__ void minKernel(void *data, const int colPos, const int rowSize, const int numRows, int *min) {
-    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
-    unsigned int start = rowsPerBlock * threadIdx.x;
-    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
-    int threadMin = *min;
-    int *currVal;
-    for (unsigned int i = start; i < end; ++i) {
-        if (i >= numRows) break;
-        currVal = (int *)((char *)data + i * rowSize + colPos);
-        threadMin = threadMin < *currVal ? threadMin : *currVal;
-    }
-    atomicMin(min, threadMin);
-}
-
 __device__ float atomicMax(float* address, float val)
 {
     int* address_as_i = (int*) address;
@@ -95,6 +81,20 @@ __device__ float atomicMin(float* address, float val)
     return __int_as_float(old);
 }
 
+__global__ void minKernel(void *data, const int colPos, const int rowSize, const int numRows, int *min) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int threadMin = *min;
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        threadMin = threadMin < *currVal ? threadMin : *currVal;
+    }
+    atomicMin(min, threadMin);
+}
+
 __global__ void minKernel(void *data, const int colPos, const int rowSize, const int numRows, float *min) {
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
     unsigned int start = rowsPerBlock * threadIdx.x;
@@ -107,6 +107,62 @@ __global__ void minKernel(void *data, const int colPos, const int rowSize, const
         threadMin = threadMin < *currVal ? threadMin : *currVal;
     }
     atomicMin(min, threadMin);
+}
+
+__global__ void maxKernel(void *data, const int colPos, const int rowSize, const int numRows, int *max) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int threadMax = *max;
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        threadMax = threadMax > *currVal ? threadMax : *currVal;
+    }
+    atomicMax(max, threadMax);
+}
+
+__global__ void maxKernel(void *data, const int colPos, const int rowSize, const int numRows, float *max) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    float threadMax = *max;
+    float *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (float *)((char *)data + i * rowSize + colPos);
+        threadMax = threadMax > *currVal ? threadMax : *currVal;
+    }
+    atomicMax(max, threadMax);
+}
+
+__global__ void sumKernel(void *data, const int colPos, const int rowSize, const int numRows, int *sum) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int threadSum = *sum;
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        threadSum += *currVal;
+    }
+    atomicAdd(sum, threadSum);
+}
+
+__global__ void sumKernel(void *data, const int colPos, const int rowSize, const int numRows, float *sum) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    float threadMax = *sum;
+    float *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (float *)((char *)data + i * rowSize + colPos);
+        threadMax += *currVal;
+    }
+    atomicAdd(sum, threadMax);
 }
 
 void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames, Data &d) {
@@ -189,11 +245,98 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     vector.push_back(*newExpr(CONSTANT_FLT, min_h));
                 }
             } else if (strcmp(expr->name, "max") == 0) {
-
+                if (resType == TYPE_INT) {
+                    int max_h = INT_MAX;
+                    int *max;
+                    cudaMalloc(&max, sizeof(int));
+                    cudaMemcpy(max, &max_h, sizeof(int), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        maxKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, max);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&max_h, max, sizeof(int), cudaMemcpyDeviceToHost);
+                    cudaFree(max);
+                    printf("Max value is: %d\n", max_h);
+                    vector.push_back(*newExpr(CONSTANT_INT, (long) max_h));
+                } else if (resType == TYPE_FLOAT) {
+                    float max_h = FLT_MAX;
+                    float *max;
+                    cudaMalloc(&max, sizeof(float));
+                    cudaMemcpy(max, &max_h, sizeof(float), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        maxKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, max);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&max_h, max, sizeof(float), cudaMemcpyDeviceToHost);
+                    cudaFree(max);
+                    vector.push_back(*newExpr(CONSTANT_FLT, max_h));
+                }
             } else if (strcmp(expr->name, "sum") == 0) {
-
+                if (resType == TYPE_INT) {
+                    int sum_h = 0;
+                    int *sum;
+                    cudaMalloc(&sum, sizeof(int));
+                    cudaMemcpy(sum, &sum_h, sizeof(int), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&sum_h, sum, sizeof(int), cudaMemcpyDeviceToHost);
+                    cudaFree(sum);
+                    printf("Sum value is: %d\n", sum_h);
+                    vector.push_back(*newExpr(CONSTANT_INT, (long) sum_h));
+                } else if (resType == TYPE_FLOAT) {
+                    float sum_h = FLT_MAX;
+                    float *sum;
+                    cudaMalloc(&sum, sizeof(float));
+                    cudaMemcpy(sum, &sum_h, sizeof(float), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&sum_h, sum, sizeof(float), cudaMemcpyDeviceToHost);
+                    cudaFree(sum);
+                    vector.push_back(*newExpr(CONSTANT_FLT, sum_h));
+                }
             } else if (strcmp(expr->name, "avg") == 0) {
-
+                if (resType == TYPE_INT) {
+                    int sum_h = 0;
+                    int *sum;
+                    cudaMalloc(&sum, sizeof(int));
+                    cudaMemcpy(sum, &sum_h, sizeof(int), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&sum_h, sum, sizeof(int), cudaMemcpyDeviceToHost);
+                    cudaFree(sum);
+                    printf("Sum value is: %d\n", sum_h);
+                    vector.push_back(*newExpr(CONSTANT_INT, (long) sum_h));
+                } else if (resType == TYPE_FLOAT) {
+                    float sum_h = FLT_MAX;
+                    float *sum;
+                    cudaMalloc(&sum, sizeof(float));
+                    cudaMemcpy(sum, &sum_h, sizeof(float), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&sum_h, sum, sizeof(float), cudaMemcpyDeviceToHost);
+                    cudaFree(sum);
+                    vector.push_back(*newExpr(CONSTANT_FLT, sum_h));
+                }
             } else if (strcmp(expr->name, "count") == 0) {
 
             }
