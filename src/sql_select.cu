@@ -214,7 +214,7 @@ void sql_select::execute(std::string &query) {
                 cudaMemcpy(type_d, &d->mdata.datatypes[0], sizeof(ColType) * d->mdata.columns.size(),
                            cudaMemcpyHostToDevice);
 
-                // void *join = malloc(d->chunkSize * d->chunkSize * d->mdata.rowSize);
+                void *join = malloc(d->chunkSize * d->chunkSize * d->mdata.rowSize);
                 void *dataL = malloc(d->chunkSize * dL.mdata.rowSize), *dataL_d;
                 void *dataR = malloc(d->chunkSize * dR.mdata.rowSize), *dataR_d;
                 void *join_d; // Upto n^2 rows can be stored
@@ -227,12 +227,6 @@ void sql_select::execute(std::string &query) {
 
                 std::vector<myExpr> whereClause;
                 myExpr *whereClause_d;
-                if (stmt->whereClause != nullptr) {
-                    exprToVec(stmt->whereClause, whereClause, d->mdata.columns, *d);
-                    cudaMalloc(&whereClause_d, sizeof(myExpr) * whereClause.size());
-                    cudaMemcpy(whereClause_d, &whereClause[0], sizeof(myExpr) * whereClause.size(),
-                               cudaMemcpyHostToDevice);
-                }
 
                 switch (table->join->type) {
                     case hsql::kJoinInner:  // Do nothing
@@ -272,9 +266,11 @@ void sql_select::execute(std::string &query) {
                         cudaDeviceSynchronize();
 
                         cudaMemcpy(&numRowsJoin, numRowsJoin_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
-                        selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
-                                                         type_d, whereClause_d, numRowsJoin);
-                        cudaDeviceSynchronize();
+                        cudaMemcpy(join, join_d, numRowsJoin * d->mdata.rowSize, cudaMemcpyDeviceToHost);
+                        d->write(join, numRowsJoin * d->mdata.rowSize);
+                        // selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
+                        //                                  type_d, whereClause_d, numRowsJoin);
+                        // cudaDeviceSynchronize();
                         cudaMemcpy(dataR_d, dataR, rowsReadR * dR.mdata.rowSize, cudaMemcpyHostToDevice);
                     }
                     if (table->join->type == hsql::kJoinLeft || table->join->type == hsql::kJoinRight) {
@@ -286,15 +282,34 @@ void sql_select::execute(std::string &query) {
                     cudaDeviceSynchronize();
                     cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
                 }
-                d->~Data();
-                free(d);
                 free(dataL);
                 free(dataR);
-
                 cudaFree(dataL_d);
                 cudaFree(dataR_d);
-                cudaFree(join_d);
                 cudaFree(joinCondition_d);
+
+                d->switchToRead();
+                if (stmt->whereClause != nullptr) {
+                    exprToVec(stmt->whereClause, whereClause, d->mdata.columns, *d);
+                    cudaMalloc(&whereClause_d, sizeof(myExpr) * whereClause.size());
+                    cudaMemcpy(whereClause_d, &whereClause[0], sizeof(myExpr) * whereClause.size(),
+                               cudaMemcpyHostToDevice);
+
+                    numRowsJoin = d->read(join);
+                    while (numRowsJoin > 0) {
+                        cudaMemcpy(join_d, join, numRowsJoin * d->mdata.rowSize, cudaMemcpyHostToDevice);
+                        selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
+                                                         type_d, whereClause_d, numRowsJoin);
+                        d->read(join);
+                        cudaDeviceSynchronize();
+                    }
+                }
+
+                d->~Data();
+                free(d);
+                free(join);
+
+                cudaFree(join_d);
                 cudaFree(offsets_d);
                 cudaFree(type_d);
                 cudaFree(numRowsJoin_d);

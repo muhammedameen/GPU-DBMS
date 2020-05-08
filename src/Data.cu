@@ -4,7 +4,7 @@
 
 #include "Data.cuh"
 
-Data::Data(std::string tableName, bool temp = false) {
+Data::Data(std::string tableName, bool temp) {
     joinObject = false;
     this->tableName = tableName;
     this->writeHappened = false;

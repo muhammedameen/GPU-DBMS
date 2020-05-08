@@ -19,7 +19,7 @@
 class Data {
 public:
 
-    explicit Data(std::string tableName, bool temp);
+    explicit Data(std::string tableName, bool temp = false);
     Data(const std::string& t1, const std::string& t2);
 
     int read(void *data);
@@ -32,13 +32,13 @@ public:
     // no of rows dealt as a chunk
     int chunkSize;
     void restartRead();
+    bool switchToRead();
 private:
     bool writeHappened;
     bool joinObject;
     std::string tableName;
     std::ifstream f;
     std::ofstream o;
-    bool switchToRead();
 };
 
 
