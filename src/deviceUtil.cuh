@@ -35,7 +35,7 @@ __device__ int appendStr(char *data, const char *str);
 
 __device__ bool isNull(int *i);
 
-__device__ bool isNull(char *data, int size);
+__device__ bool isNull(char *data);
 
 __device__ bool isNull(float *f);
 

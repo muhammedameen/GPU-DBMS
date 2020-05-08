@@ -35,7 +35,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
 
 __global__ void
 joinKernel(void *left, void *right, void *join, myExpr *joinExpr, int *offset, int numCols, ColType *types, int rowSizeL, int rowSizeR, int numRowsL, int numRowsR,
-           unsigned int *numRowsRes) {
+           unsigned int *numRowsRes, bool *matchedL) {
     if (threadIdx.x == 0) {
         *numRowsRes = 0;
     }
@@ -51,9 +51,12 @@ joinKernel(void *left, void *right, void *join, myExpr *joinExpr, int *offset, i
     bool flag;
     unsigned old;
 
+    unsigned l_prev = numRowsL + 1;
+    unsigned l, r;
     for (unsigned i = start; i < end; ++i) {
         // row i in join is obtained from i / numRowsR from left and i % numRowsR in right
-        unsigned l = i / numRowsR, r = i % numRowsR;
+        l = i / numRowsR;
+        r = i % numRowsR;
         if (l >= numRowsL || r >= numRowsR) break;
         // printf("[%d, %d, (%d, %d)]\n", threadIdx.x, i, l, r);
         row = malloc(rowSizeRes);
@@ -68,11 +71,56 @@ joinKernel(void *left, void *right, void *join, myExpr *joinExpr, int *offset, i
         }
         free(res);
         if (!flag) continue;
+        if (l != l_prev) {
+            matchedL[l] = true;
+            l_prev = l;
+        }
         old = atomicInc(numRowsRes, numRowsL * numRowsR);
         memcpy((char *) join + old * rowSizeRes, row, rowSizeRes);
     }
 }
 
+__global__ void
+printLeft(void *data, bool *matched, int numRows, ColType *typesNew, const int numColsOld, const int numColsNew,
+          const int rowSizeOld, const int rowSizeNew) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    void *rowOld, *row, *cell;
+    row = malloc(rowSizeNew);
+    cell = (char *)row + rowSizeOld;
+    for (int j = numColsOld; j < numColsNew; ++j) {
+        switch (typesNew[j].type) {
+            case TYPE_INT: {
+                int *x = (int *) cell;
+                *x = getNullInt();
+                break;
+            }
+            case TYPE_FLOAT: {
+                float *x = (float *) cell;
+                *x = getNullFlt();
+                break;
+            }
+            case TYPE_VARCHAR: {
+                getNullStr((char *)cell, typesNew[j].size);
+                break;
+            }
+            default:
+                printf("Not implemented\n");
+                return;
+        }
+        cell = (char *) cell + typesNew[j].size;
+    }
+    for (int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        if (!matched[i]) {
+            rowOld = (char *) data + rowSizeOld * i;
+            memcpy(row, rowOld, rowSizeOld);
+            printRowDevice(row, typesNew, numColsNew);
+        }
+    }
+    free(row);
+}
 
 void sql_select::execute(std::string &query) {
 
@@ -130,14 +178,20 @@ void sql_select::execute(std::string &query) {
             //     // printSelectStatementInfo(table->select, numIndent);
             //     break;
             case hsql::kTableJoin: {
-                //     // inprint("Join Table", numIndent);
-                //     // inprint("Left", numIndent + 1);
-                //     // printTableRefInfo(table->join->left, numIndent + 2);
-                //     // inprint("Right", numIndent + 1);
-                //     // printTableRefInfo(table->join->right, numIndent + 2);
-                //     // inprint("Join Condition", numIndent + 1);
-                //     // printExpression(table->join->condition, numIndent + 2);
-                d = new Data(table->join->left->name, table->join->right->name);
+                std::string leftTable, rightTable;
+                if (table->join->type != hsql::kJoinRight) {
+                    d = new Data(table->join->left->name, table->join->right->name);
+                    leftTable = table->join->left->name;
+                    rightTable = table->join->right->name;
+                } else {
+                    d = new Data(table->join->right->name, table->join->left->name);
+                    leftTable = table->join->right->name;
+                    rightTable = table->join->left->name;
+                }
+                Data dL(leftTable);
+                dL.chunkSize = d->chunkSize;
+                Data dR(rightTable);
+                dR.chunkSize = d->chunkSize;
 
                 std::vector<myExpr> joinCondition;
                 exprToVec(table->join->condition, joinCondition, d->mdata.columns);
@@ -152,17 +206,14 @@ void sql_select::execute(std::string &query) {
                     offsets[i] = offsets[i - 1] + d->mdata.datatypes[i - 1].size;
                 }
                 int *offsets_d;
-                cudaMalloc(&offsets_d, sizeof(int) * ( d->mdata.columns.size() + 1));
+                cudaMalloc(&offsets_d, sizeof(int) * (d->mdata.columns.size() + 1));
                 cudaMemcpy(offsets_d, &offsets[0], sizeof(int) * (d->mdata.columns.size() + 1), cudaMemcpyHostToDevice);
 
                 ColType *type_d;
-                cudaMalloc(&type_d, sizeof(ColType) *  d->mdata.columns.size());
-                cudaMemcpy(type_d, &d->mdata.datatypes[0], sizeof(ColType) *  d->mdata.columns.size(), cudaMemcpyHostToDevice);
+                cudaMalloc(&type_d, sizeof(ColType) * d->mdata.columns.size());
+                cudaMemcpy(type_d, &d->mdata.datatypes[0], sizeof(ColType) * d->mdata.columns.size(),
+                           cudaMemcpyHostToDevice);
 
-                Data dL(table->join->left->name);
-                dL.chunkSize = d->chunkSize;
-                Data dR(table->join->right->name);
-                dR.chunkSize = d->chunkSize;
                 // void *join = malloc(d->chunkSize * d->chunkSize * d->mdata.rowSize);
                 void *dataL = malloc(d->chunkSize * dL.mdata.rowSize), *dataL_d;
                 void *dataR = malloc(d->chunkSize * dR.mdata.rowSize), *dataR_d;
@@ -170,8 +221,6 @@ void sql_select::execute(std::string &query) {
                 cudaMalloc(&join_d, d->chunkSize * d->chunkSize * d->mdata.rowSize);
                 cudaMalloc(&dataL_d, dL.chunkSize * dL.mdata.rowSize);
                 cudaMalloc(&dataR_d, dR.chunkSize * dR.mdata.rowSize);
-                int rowsReadL = dL.read(dataL), rowsReadR;
-                cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
                 unsigned int numRowsJoin = 0;
                 unsigned int *numRowsJoin_d;
                 cudaMalloc(&numRowsJoin_d, sizeof(unsigned int));
@@ -185,29 +234,56 @@ void sql_select::execute(std::string &query) {
                                cudaMemcpyHostToDevice);
                 }
 
+                switch (table->join->type) {
+                    case hsql::kJoinInner:  // Do nothing
+                        break;
+                    case hsql::kJoinOuter:
+                        break;
+                    case hsql::kJoinLeft:
+                        break;
+                    case hsql::kJoinRight:
+                        break;
+                    case hsql::kJoinLeftOuter:
+                        break;
+                    case hsql::kJoinRightOuter:
+                        break;
+                    case hsql::kJoinCross:
+                        break;
+                    case hsql::kJoinNatural:
+                        break;
+                }
+
+                int rowsReadL = dL.read(dataL), rowsReadR;
+                cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
+
+                bool *matched_d;
+                cudaMalloc(&matched_d, sizeof(bool) * dL.chunkSize);
                 while (rowsReadL > 0) {
-                    // TODO: implement resetRead()
+                    cudaMemset(matched_d, 0, sizeof(bool) * dL.chunkSize);
                     dR.restartRead();
                     rowsReadR = dR.read(dataR);
                     cudaMemcpy(dataR_d, dataR, rowsReadR * dR.mdata.rowSize, cudaMemcpyHostToDevice);
                     while (rowsReadR > 0) {
-                        joinKernel<<<1, NUM_THREADS>>>(dataL_d, dataR_d, join_d, joinCondition_d, offsets_d, d->mdata.columns.size(),
-                                               type_d, dL.mdata.rowSize, dR.mdata.rowSize, rowsReadL, rowsReadR,
-                                               numRowsJoin_d);
+                        joinKernel<<<1, NUM_THREADS>>>(dataL_d, dataR_d, join_d, joinCondition_d, offsets_d,
+                                                       d->mdata.columns.size(),
+                                                       type_d, dL.mdata.rowSize, dR.mdata.rowSize, rowsReadL, rowsReadR,
+                                                       numRowsJoin_d, matched_d);
+                        rowsReadR = dR.read(dataR);
                         cudaDeviceSynchronize();
-                        // cudaError_t err = cudaGetLastError();
-                        // if (err != cudaSuccess) {
-                        //     printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
-                        // }
-                        // cudaMemcpy(join, join_d, numRowsJoin, cudaMemcpyDeviceToHost);
+
                         cudaMemcpy(&numRowsJoin, numRowsJoin_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
                         selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
                                                          type_d, whereClause_d, numRowsJoin);
                         cudaDeviceSynchronize();
-                        rowsReadR = dR.read(dataR);
                         cudaMemcpy(dataR_d, dataR, rowsReadR * dR.mdata.rowSize, cudaMemcpyHostToDevice);
                     }
+                    if (table->join->type == hsql::kJoinLeft || table->join->type == hsql::kJoinRight) {
+                        printLeft<<<1, NUM_THREADS>>>(dataL_d, matched_d, rowsReadL, type_d, dL.mdata.columns.size(),
+                                                      d->mdata.columns.size(), dL.mdata.rowSize, d->mdata.rowSize);
+
+                    }
                     rowsReadL = dL.read(dataL);
+                    cudaDeviceSynchronize();
                     cudaMemcpy(dataL_d, dataL, rowsReadL * dL.mdata.rowSize, cudaMemcpyHostToDevice);
                 }
                 d->~Data();
@@ -224,6 +300,7 @@ void sql_select::execute(std::string &query) {
                 cudaFree(numRowsJoin_d);
                 cudaFree(whereClause_d);
                 cudaFree(offsets_d);
+                cudaFree(matched_d);
                 return;
                 break;
             }
@@ -236,7 +313,6 @@ void sql_select::execute(std::string &query) {
         }
         if (stmt->whereClause != nullptr) {
             // Get where
-            printf("Where clause\n");
             std::vector<myExpr> tree;
 
             auto expr = stmt->whereClause;
@@ -271,17 +347,10 @@ void sql_select::execute(std::string &query) {
 
             cudaMalloc(&data_d, d->chunkSize * rowSize);
             while (numRows > 0) {
-                // printf("Inside\n");
-                // fflush(stdout);
                 cudaMemcpy(data_d, data, rowSize * numRows, cudaMemcpyHostToDevice);
                 selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, numRows);
-                // eval(data, offsets, &d.mdata.datatypes, &tree[0], , , 0);
-                cudaDeviceSynchronize();
-                cudaError_t err = cudaGetLastError();
-                if (err != cudaSuccess) {
-                    printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
-                }
                 numRows = d->read(data);
+                cudaDeviceSynchronize();
             }
 
             // Free all the data

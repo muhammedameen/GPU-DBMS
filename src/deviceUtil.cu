@@ -11,18 +11,30 @@ __device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
     for (int i = 0; i < numCols; start += colTypes[i].size, i++) {
         switch (colTypes[i].type) {
             case TYPE_INT: {
-                int temp = *((int *) ((char *) row + start));
-                buffStart += appendInt(buff + buffStart, temp);
+                int *temp = ((int *) ((char *) row + start));
+                if (!isNull(temp)) {
+                    buffStart += appendInt(buff + buffStart, *temp);
+                } else {
+                    buffStart += appendStr(buff + buffStart, "NULL");
+                }
                 break;
             }
             case TYPE_FLOAT: {
-                float temp = *((float *) ((char *) row + start));
-                buffStart += appendFlt(buff + buffStart, temp);
+                float *temp = ((float *) ((char *) row + start));
+                if (!isNull(temp)) {
+                    buffStart += appendFlt(buff + buffStart, *temp);
+                } else {
+                    buffStart += appendStr(buff + buffStart, "NULL");
+                }
                 break;
             }
             case TYPE_VARCHAR: {
                 char *temp = (char *) row + start;
-                buffStart += appendStr(buff + buffStart, temp);
+                if (!isNull(temp)) {
+                    buffStart += appendStr(buff + buffStart, temp);
+                } else {
+                    buffStart += appendStr(buff + buffStart, "NULL");
+                }
                 break;
             }
             default:
@@ -675,14 +687,10 @@ __device__ bool isNull(int *i){
     return *i == INT_MIN;
 }
 
-__device__ bool isNull(char *data, int size){
-    int i=0;
-    while(i<size-1){
-        if(data[i] != '1')
-            return false;
-        i++;
-    }
-    return data[size - 1] == '0';
+__device__ bool isNull(char *data){
+    int i = 0;
+    while (data[i] == 127) ++i;
+    return data[i] == 0;
 }
 
 __device__ bool isNull(float *f){
@@ -700,8 +708,8 @@ __device__ float getNullFlt(){
 __device__ void getNullStr(char *data, int size){
     int i=0;
     while(i < size-1){
-        data[i] = '1';
+        data[i] = 127;
         i++;
     }
-    data[size-1] = '0';
+    data[size-1] = 0;
 }

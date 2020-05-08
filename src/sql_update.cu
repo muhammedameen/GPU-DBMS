@@ -142,10 +142,10 @@ void sql_update::execute(std::string &query) {
             updateKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, numRows, updateIds_d,
                                              updateExprs_d, updateOffsets_d, colIds.size());
             cudaDeviceSynchronize();
-            cudaError_t err = cudaGetLastError();
-            if (err != cudaSuccess) {
-                printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
-            }
+            // cudaError_t err = cudaGetLastError();
+            // if (err != cudaSuccess) {
+            //     printf("Error at %d: %s\n", __LINE__, cudaGetErrorString(err));
+            // }
             cudaMemcpy(data, data_d, rowSize * numRows, cudaMemcpyDeviceToHost);
             d.write(data, numRows * d.mdata.rowSize);
             numRows = d.read(data);
