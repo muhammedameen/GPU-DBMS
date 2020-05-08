@@ -4,21 +4,15 @@
 
 #include "Data.cuh"
 
-Data::Data(std::string tableName, bool temp) {
+Data::Data(std::string tableName) {
     joinObject = false;
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
     chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize));    // read 500 MB
     readCount = 0;
-    if(!temp){
-        f.open(utils::getDataFileName(tableName), std::ios::binary);
-        o.open(utils::getTempFileName(tableName), std::ios::binary);
-    } else{
-        this->tableName = tableName + "_" + ".select_temp";
-        joinObject = true;
-        this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
-    }
+    f.open(utils::getDataFileName(tableName), std::ios::binary);
+    o.open(utils::getTempFileName(tableName), std::ios::binary);
 }
 
 
@@ -94,19 +88,8 @@ Data::Data(const std::string& t1, const std::string& t2) {
     // This should work if the above line is fixed
     this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
     this->readCount = 0;
-//    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
     this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
-
-bool Data::switchToRead(){
-    if(o.is_open() && !f.is_open()){
-        o.close();
-        this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
-        return true;
-    }
-    return false;
-}
-
-
 
 
