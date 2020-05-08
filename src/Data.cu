@@ -4,15 +4,21 @@
 
 #include "Data.cuh"
 
-Data::Data(std::string tableName) {
+Data::Data(std::string tableName, bool temp = false) {
     joinObject = false;
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
     chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize));    // read 20 MB
     readCount = 0;
-    f.open(utils::getDataFileName(tableName), std::ios::binary);
-    o.open(utils::getTempFileName(tableName), std::ios::binary);
+    if(!temp){
+        f.open(utils::getDataFileName(tableName), std::ios::binary);
+        o.open(utils::getTempFileName(tableName), std::ios::binary);
+    } else{
+        this->tableName = tableName + "_" + ".select_temp";
+        joinObject = true;
+        this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    }
 }
 
 
@@ -100,5 +106,7 @@ bool Data::switchToRead(){
     }
     return false;
 }
+
+
 
 
