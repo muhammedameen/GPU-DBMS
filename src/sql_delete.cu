@@ -44,7 +44,7 @@ void sql_delete::execute(std::string &query) {
         tableName = stmt->tableName;
         std::vector<myExpr> flattenedExpr;
         Data d(tableName);
-        exprToVec(stmt->expr, flattenedExpr, d.mdata.columns);
+        exprToVec(stmt->expr, flattenedExpr, d.mdata.columns, d);
 
         cudaSetDevice(0);
         cudaDeviceReset();

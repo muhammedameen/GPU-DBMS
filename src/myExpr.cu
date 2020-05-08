@@ -2,7 +2,11 @@
 // Created by gautam on 28/04/20.
 //
 
+#include <float.h>
 #include "myExpr.cuh"
+
+#define NUM_THREADS 512
+
 
 myExpr *newExpr(myExprType type, long intVal) {
     auto *expr = new myExpr;
@@ -53,7 +57,59 @@ void freeExpr(myExpr *expr){
     free(expr);
 }
 
-void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames) {
+__global__ void minKernel(void *data, const int colPos, const int rowSize, const int numRows, int *min) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int threadMin = *min;
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        threadMin = threadMin < *currVal ? threadMin : *currVal;
+    }
+    atomicMin(min, threadMin);
+}
+
+__device__ float atomicMax(float* address, float val)
+{
+    int* address_as_i = (int*) address;
+    int old = *address_as_i, assumed;
+    do {
+        assumed = old;
+        old = ::atomicCAS(address_as_i, assumed,
+                          __float_as_int(::fmaxf(val, __int_as_float(assumed))));
+    } while (assumed != old);
+    return __int_as_float(old);
+}
+
+__device__ float atomicMin(float* address, float val)
+{
+    int* address_as_i = (int*) address;
+    int old = *address_as_i, assumed;
+    do {
+        assumed = old;
+        old = ::atomicCAS(address_as_i, assumed,
+                          __float_as_int(::fminf(val, __int_as_float(assumed))));
+    } while (assumed != old);
+    return __int_as_float(old);
+}
+
+__global__ void minKernel(void *data, const int colPos, const int rowSize, const int numRows, float *min) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    float threadMin = *min;
+    float *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (float *)((char *)data + i * rowSize + colPos);
+        threadMin = threadMin < *currVal ? threadMin : *currVal;
+    }
+    atomicMin(min, threadMin);
+}
+
+void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames, Data &d) {
     switch (expr->type) {
         case hsql::kExprLiteralFloat:
             vector.push_back(*newExpr(CONSTANT_FLT, expr->fval));
@@ -78,18 +134,83 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
             vector.push_back(*newExpr(COL_NAME, (long)i));
             break;
         }
-        case hsql::kExprFunctionRef:
-            printf("What is this 2 Electric Boogaloo");
+        case hsql::kExprFunctionRef: {
+            // printf("%s\n", expr->name);
+            int oldChunkSize = d.chunkSize;
+            d.chunkSize *= 10;
+            void *data = malloc(d.chunkSize * d.mdata.rowSize);
+            void *data_d;
+            cudaMalloc(&data_d, d.chunkSize * d.mdata.rowSize);
+            int rowsRead = d.read(data);
+            cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+            std::string colName = expr->exprList->at(0)->name;
+            // printf("Col for agg function is %s:%d\n", colName.c_str(), d.mdata.colMap[colName]);
+            fflush(stdout);
+            int colPos = 0;
+            int resType = TYPE_INT;
+
+            for (int i = 0; i < colNames.size(); ++i) {
+                if (colNames[i] == colName) {
+                    resType = d.mdata.datatypes[i].type;
+                    break;
+                }
+                colPos += d.mdata.datatypes[i].size;
+            }
+
+            if (strcmp(expr->name, "min") == 0) {
+                if (resType == TYPE_INT) {
+                    int min_h = INT_MAX;
+                    int *min;
+                    cudaMalloc(&min, sizeof(int));
+                    cudaMemcpy(min, &min_h, sizeof(int), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        minKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, min);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&min_h, min, sizeof(int), cudaMemcpyDeviceToHost);
+                    cudaFree(min);
+                    vector.push_back(*newExpr(CONSTANT_INT, (long) min_h));
+                } else if (resType == TYPE_FLOAT) {
+                    float min_h = FLT_MAX;
+                    float *min;
+                    cudaMalloc(&min, sizeof(float));
+                    cudaMemcpy(min, &min_h, sizeof(float), cudaMemcpyHostToDevice);
+                    while (rowsRead > 0) {
+                        minKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, min);
+                        rowsRead = d.read(data);
+                        cudaDeviceSynchronize();
+                        cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                    }
+                    cudaMemcpy(&min_h, min, sizeof(float), cudaMemcpyDeviceToHost);
+                    cudaFree(min);
+                    vector.push_back(*newExpr(CONSTANT_FLT, min_h));
+                }
+            } else if (strcmp(expr->name, "max") == 0) {
+
+            } else if (strcmp(expr->name, "sum") == 0) {
+
+            } else if (strcmp(expr->name, "avg") == 0) {
+
+            } else if (strcmp(expr->name, "count") == 0) {
+
+            }
+            d.chunkSize = oldChunkSize;
+            d.restartRead();
+            free(data);
+            cudaFree(data_d);
             break;
+        }
         case hsql::kExprOperator: {
             myExpr *temp = newExpr(getOpType(expr->opType, expr->opChar));
             vector.push_back(*temp);
             int curr = (int)vector.size() - 1;
             vector[curr].childLeft = vector.size();
-            exprToVec(expr->expr, vector, colNames);
+            exprToVec(expr->expr, vector, colNames, d);
             if (expr->expr2 != nullptr) {
                 vector[curr].childRight = vector.size();
-                exprToVec(expr->expr2, vector, colNames);
+                exprToVec(expr->expr2, vector, colNames, d);
             }
             break;
         }

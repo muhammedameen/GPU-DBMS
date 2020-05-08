@@ -194,7 +194,7 @@ void sql_select::execute(std::string &query) {
                 dR.chunkSize = d->chunkSize;
 
                 std::vector<myExpr> joinCondition;
-                exprToVec(table->join->condition, joinCondition, d->mdata.columns);
+                exprToVec(table->join->condition, joinCondition, d->mdata.columns, *d);
                 myExpr *joinCondition_d;
                 cudaMalloc(&joinCondition_d, joinCondition.size() * sizeof(myExpr));
                 cudaMemcpy(joinCondition_d, &joinCondition[0], sizeof(myExpr) * joinCondition.size(),
@@ -228,7 +228,7 @@ void sql_select::execute(std::string &query) {
                 std::vector<myExpr> whereClause;
                 myExpr *whereClause_d;
                 if (stmt->whereClause != nullptr) {
-                    exprToVec(stmt->whereClause, whereClause, d->mdata.columns);
+                    exprToVec(stmt->whereClause, whereClause, d->mdata.columns, *d);
                     cudaMalloc(&whereClause_d, sizeof(myExpr) * whereClause.size());
                     cudaMemcpy(whereClause_d, &whereClause[0], sizeof(myExpr) * whereClause.size(),
                                cudaMemcpyHostToDevice);
@@ -316,7 +316,7 @@ void sql_select::execute(std::string &query) {
             std::vector<myExpr> tree;
 
             auto expr = stmt->whereClause;
-            exprToVec(expr, tree, d->mdata.columns);
+            exprToVec(expr, tree, d->mdata.columns, *d);
             free(expr);
 
             int rowSize = d->mdata.rowSize;

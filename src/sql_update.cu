@@ -85,7 +85,7 @@ void sql_update::execute(std::string &query) {
         tableName = stmt->table->name;
         std::vector<myExpr> flattenedExpr;
         Data d(tableName);
-        exprToVec(stmt->where, flattenedExpr, d.mdata.columns);
+        exprToVec(stmt->where, flattenedExpr, d.mdata.columns, d);
 
         cudaSetDevice(0);
         cudaDeviceReset();
@@ -116,7 +116,7 @@ void sql_update::execute(std::string &query) {
         for (int i = 0; i < stmt->updates->size(); ++i) {
             hsql::UpdateClause *clause = stmt->updates->at(i);
             colIds[i] = d.mdata.colMap[clause->column];
-            exprToVec(clause->value, updateExprs[i], d.mdata.columns);
+            exprToVec(clause->value, updateExprs[i], d.mdata.columns, d);
         }
         int *updateIds_d;
         cudaMalloc(&updateIds_d, sizeof(int) * colIds.size());

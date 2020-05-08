@@ -7,7 +7,11 @@
 
 #include <cstring>
 #include <cstdlib>
+
+#include <cuda_runtime.h>
+
 #include "../sql-parser/src/sql/Expr.h"
+#include "Data.cuh"
 
 enum myExprType{
     CONSTANT_ERR,
@@ -51,7 +55,7 @@ myExpr *newExpr(myExprType type);
 
 void freeExpr(myExpr *expr);
 
-void exprToVec(hsql::Expr *pExpr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames);
+void exprToVec(hsql::Expr *pExpr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames, Data &d);
 
 myExprType getOpType(hsql::Expr::OperatorType type, char opChar);
 
