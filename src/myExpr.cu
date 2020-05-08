@@ -171,6 +171,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     }
                     cudaMemcpy(&min_h, min, sizeof(int), cudaMemcpyDeviceToHost);
                     cudaFree(min);
+                    printf("Min value is: %d\n", min_h);
                     vector.push_back(*newExpr(CONSTANT_INT, (long) min_h));
                 } else if (resType == TYPE_FLOAT) {
                     float min_h = FLT_MAX;
