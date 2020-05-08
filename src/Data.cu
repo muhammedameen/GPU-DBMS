@@ -9,7 +9,7 @@ Data::Data(std::string tableName) {
     this->tableName = tableName;
     this->writeHappened = false;
     mdata = Metadata(tableName);
-    chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize));    // read 20 MB
+    chunkSize = ((500 * 1024 * 1024) / (mdata.rowSize));    // read 500 MB
     readCount = 0;
     f.open(utils::getDataFileName(tableName), std::ios::binary);
     o.open(utils::getTempFileName(tableName), std::ios::binary);
@@ -86,7 +86,7 @@ Data::Data(const std::string& t1, const std::string& t2) {
     }
     mdata.rowCount = 0;
     // This should work if the above line is fixed
-    this->chunkSize = ((20 * 1024 * 1024) / mdata.rowSize); // read 20MB because we will need 20 + 20 + 20 * 20 total space while joining
+    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
     this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
