@@ -347,8 +347,8 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
             break;
         }
         case hsql::kExprOperator: {
-            myExpr *temp = newExpr(getOpType(expr->opType, expr->opChar));
-            vector.push_back(*temp);
+            myExpr temp = newExpr(getOpType(expr->opType, expr->opChar));
+            vector.push_back(temp);
             int curr = (int)vector.size() - 1;
             vector[curr].childLeft = vector.size();
             exprToVec(expr->expr, vector, colNames, d);

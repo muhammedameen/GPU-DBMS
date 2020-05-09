@@ -62,6 +62,7 @@ __global__ void selectKernelRes(void *data, int rowSize, int *offset, int offset
             free(res);
             if (!flag) continue;
             // Condition is satisfied, write code here
+            printRowDevice(row, types, offsetSize);
             old = atomicInc(top, numRows + 1);
             memcpy((char *) resData + old * rowSize, row, rowSize);
         }
@@ -211,6 +212,10 @@ void sql_select::execute(std::string &query) {
         }
     }
     Data *d = getData(stmt->fromTable);
+
+    // DEBUGGING
+
+    //
     std::vector<myExpr> whereExpr;
     if (stmt->whereClause != nullptr) {
         exprToVec(stmt->whereClause, whereExpr, d->mdata.columns, *d);
@@ -273,7 +278,7 @@ Data *sql_select::getData(hsql::TableRef *fromTable) {
                 dL = getData(fromTable->join->right);
                 dR = getData(fromTable->join->left);
             }
-            // d = new Data(dL, dR);
+            d = new Data(dL, dR);
             dL->chunkSize = dR->chunkSize = d->chunkSize;
 
             std::vector<myExpr> joinCondition;
@@ -367,12 +372,15 @@ Data *sql_select::getData(hsql::TableRef *fromTable) {
             cudaFree(type_d);
             cudaFree(numRowsJoin_d);
             cudaFree(matched_d);
+
+            d->switchToRead();
             return d;
         }
         case hsql::kTableCrossProduct:
             utils::invalidQuery("Cross Product is not Implemented.");
             return nullptr;
     }
+    return nullptr;
 }
 
 Data *sql_select::selectData(hsql::SelectStatement *stmt) {
@@ -455,6 +463,7 @@ Data *sql_select::selectData(hsql::SelectStatement *stmt) {
         cudaMemcpy(&numMatches, numMatches_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
         cudaMemcpy(resData, resData_d, rowSize * numMatches, cudaMemcpyDeviceToHost);
         result->write(resData, rowSize * numMatches);
+        utils::printMultiple(resData, d->mdata.datatypes, rowSize, numMatches);
     }
 
     d->~Data();
@@ -467,6 +476,7 @@ Data *sql_select::selectData(hsql::SelectStatement *stmt) {
     cudaFree(type_d);
     cudaFree(where_d);
     cudaFree(offsets_d);
+    result->switchToRead();
     return result;
 }
 

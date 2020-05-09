@@ -126,7 +126,7 @@ Data::Data(Data *d){
     mdata.metadataFileName = utils::getMetadataFileName(tableName);
     mdata.rowCount = 0;
     // This should work if the above line is fixed
-    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
+    this->chunkSize = ((500 * 1024 * 1024) / mdata.rowSize);
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
