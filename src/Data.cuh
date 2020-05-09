@@ -22,6 +22,8 @@ public:
     explicit Data(std::string tableName);
     Data(const std::string& t1, const std::string& t2);
 
+    Data(Data *d1, Data *d2);
+
     int read(void *data);
     int readRow(void *data);
     int writeRow(void *data);

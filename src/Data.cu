@@ -94,6 +94,28 @@ Data::Data(const std::string& t1, const std::string& t2) {
 //    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
+Data::Data(Data *d1, Data *d2) {
+    joinObject = true;
+    this->tableName = d1->mdata.tableName + "_" + d1->mdata.tableName + ".temp";
+    this->writeHappened = false;
+    // TODO: Change mdata to a new metadata of join of both tables
+    // create metadata for join table
+    this->mdata = d1->mdata;
+    mdata.tableName = tableName;
+    mdata.dataFileName = utils::getDataFileName(tableName);
+    mdata.metadataFileName = utils::getMetadataFileName(tableName);
+    Metadata m2 = d2->mdata;
+    for (int i=0; i<m2.columns.size(); i++){
+        mdata.append(m2.columns[i], m2.datatypes[i], m2.keyMap.find(m2.columns[i]) != m2.keyMap.end());
+    }
+    mdata.rowCount = 0;
+    // This should work if the above line is fixed
+    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
+    this->readCount = 0;
+    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+//    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+}
+
 void Data::switchToRead(){
     if(f.is_open())
         f.close();
