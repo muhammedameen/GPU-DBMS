@@ -88,7 +88,7 @@ Data::Data(const std::string& t1, const std::string& t2) {
     }
     mdata.rowCount = 0;
     // This should work if the above line is fixed
-    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
+    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20KB because we will need 20KB + 20KB + 20 * 20 MB total space while joining
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
 //    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);

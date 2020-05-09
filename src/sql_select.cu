@@ -18,7 +18,6 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
     for (unsigned int i = start; i < end; i++) {
         if (i < numRows) {
             row = (char *)data + i * rowSize;
-            printRowDevice(data, types, offsetSize);
             eval(row, offset, types, exprs, res, resType);
             flag = false;
             if (resType == RESTYPE_INT) {
@@ -78,7 +77,7 @@ joinKernel(void *left, void *right, void *join, myExpr *joinExpr, int *offset, i
         }
         old = atomicInc(numRowsRes, numRowsL * numRowsR);
         memcpy((char *) join + old * rowSizeRes, row, rowSizeRes);
-        printRowDevice(row, types, numCols);
+        // printRowDevice(row, types, numCols);
     }
 }
 
@@ -249,7 +248,7 @@ void sql_select::execute(std::string &query) {
 
                         cudaMemcpy(&numRowsJoin, numRowsJoin_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
                         cudaMemcpy(join, join_d, numRowsJoin * d->mdata.rowSize, cudaMemcpyDeviceToHost);
-                        printf("Write result - %d\n", d->write(join, numRowsJoin * d->mdata.rowSize));
+                        d->write(join, numRowsJoin * d->mdata.rowSize);
                         fflush(stdout);
                         // selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
                         //                                  type_d, whereClause_d, numRowsJoin);
@@ -276,17 +275,19 @@ void sql_select::execute(std::string &query) {
 
                 // change chunk size before select
                 // d->chunkSize = 500 * 1024 * 1024 / d->mdata.rowSize;
+                // if chunksize is changed, join and join_d might need to be reallocated
+                d->chunkSize *= d->chunkSize;
 
-                printf("____________________________________________________");
+                // printf("____________________________________________________\n");
                 d->switchToRead();
-                numRowsJoin = d->read(join);
-                printf("Rows Read : %d\n", numRowsJoin);
-                while (numRowsJoin > 0) {
-                    cudaMemcpy(join_d, join, numRowsJoin * d->mdata.rowSize, cudaMemcpyHostToDevice);
+                int numRowsRead;
+                numRowsRead = d->read(join);
+                while (numRowsRead > 0) {
+                    cudaMemcpy(join_d, join, numRowsRead * d->mdata.rowSize, cudaMemcpyHostToDevice);
                     selectKernel<<<1, NUM_THREADS>>>(join_d, d->mdata.rowSize, offsets_d, d->mdata.columns.size(),
-                                                     type_d, whereClause_d, numRowsJoin);
-                    numRowsJoin = d->read(join);
+                                                     type_d, whereClause_d, numRowsRead);
                     cudaDeviceSynchronize();
+                    numRowsRead = d->read(join);
                 }
 
                 d->~Data();
