@@ -24,6 +24,8 @@ public:
 
     Data(Data *d1, Data *d2);
 
+    Data(Data *d);
+
     int read(void *data);
     int readRow(void *data);
     int writeRow(void *data);

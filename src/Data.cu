@@ -74,7 +74,7 @@ Data::~Data() {
 
 Data::Data(const std::string& t1, const std::string& t2) {
     joinObject = true;
-    this->tableName = t1 + "_" + t2 + ".join";
+    this->tableName = t1 + "_" + t2 + std::to_string(rand()) + ".join";
     this->writeHappened = false;
     // TODO: Change mdata to a new metadata of join of both tables
     // create metadata for join table
@@ -96,7 +96,7 @@ Data::Data(const std::string& t1, const std::string& t2) {
 
 Data::Data(Data *d1, Data *d2) {
     joinObject = true;
-    this->tableName = d1->mdata.tableName + "_" + d1->mdata.tableName + ".temp";
+    this->tableName = d1->mdata.tableName + "_" + d1->mdata.tableName + std::to_string(rand()) + ".temp";
     this->writeHappened = false;
     // TODO: Change mdata to a new metadata of join of both tables
     // create metadata for join table
@@ -114,6 +114,21 @@ Data::Data(Data *d1, Data *d2) {
     this->readCount = 0;
     this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
 //    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+}
+
+Data::Data(Data *d){
+    joinObject = true;
+    writeHappened = false;
+    tableName = d->tableName + std::to_string(rand()) + ".temp";
+    this->mdata = d->mdata;
+    mdata.tableName = tableName;
+    mdata.dataFileName = utils::getDataFileName(tableName);
+    mdata.metadataFileName = utils::getMetadataFileName(tableName);
+    mdata.rowCount = 0;
+    // This should work if the above line is fixed
+    this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
+    this->readCount = 0;
+    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
 void Data::switchToRead(){
