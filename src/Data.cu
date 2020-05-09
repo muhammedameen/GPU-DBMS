@@ -35,9 +35,12 @@ int Data::read (void *data){
         return chunkSize;
     }
     else if (readCount < mdata.rowCount){
+        // check if the read works
+        if(!f.is_open())
+            printf("File not open\n");
         f.read(static_cast<char *>(data), (mdata.rowCount - readCount) * mdata.rowSize);
         int rowsRead = mdata.rowCount - readCount;
-        readCount = mdata.rowSize;
+        readCount = mdata.rowCount;
         return rowsRead;
     } else
         return -1;
@@ -90,8 +93,8 @@ Data::Data(const std::string& t1, const std::string& t2) {
     // This should work if the above line is fixed
     this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20KB because we will need 20KB + 20KB + 20 * 20 MB total space while joining
     this->readCount = 0;
-    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
-//    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+//    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
 Data::Data(Data *d1, Data *d2) {
@@ -112,8 +115,8 @@ Data::Data(Data *d1, Data *d2) {
     // This should work if the above line is fixed
     this->chunkSize = ((20 * 1024) / mdata.rowSize); // read 20MB because we will need 20KB + 20KB + 20 * 20MB total space while joining
     this->readCount = 0;
-    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
-//    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
+//    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
 Data::Data(Data *d){
@@ -128,14 +131,15 @@ Data::Data(Data *d){
     // This should work if the above line is fixed
     this->chunkSize = ((500 * 1024 * 1024) / mdata.rowSize);
     this->readCount = 0;
-    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+//    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
 }
 
 void Data::switchToRead(){
-    if(f.is_open())
-        f.close();
-    this->o = std::ofstream(utils::getDataFileName(this->tableName), std::ios::binary);
-    o.seekp(0, std::ios::beg);
+    if(o.is_open())
+        o.close();
+    this->f = std::ifstream(utils::getDataFileName(this->tableName), std::ios::binary);
+    f.seekg(0, std::ios::beg);
 }
 
 

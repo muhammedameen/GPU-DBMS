@@ -212,9 +212,11 @@ void sql_select::execute(std::string &query) {
         }
     }
     Data *d = getData(stmt->fromTable);
-
     // DEBUGGING
-
+//    printf("___________3\n");
+//    void *resData = malloc(d->chunkSize * d->mdata.rowSize);
+//    utils::printMultiple(resData, d->mdata.datatypes, d->mdata.rowSize, 2);
+//    d->restartRead();
     //
     std::vector<myExpr> whereExpr;
     if (stmt->whereClause != nullptr) {
@@ -246,6 +248,7 @@ void sql_select::execute(std::string &query) {
 
     int rowsRead = d->read(data);
     cudaMalloc(&data_d, d->chunkSize * rowSize);
+//    printf("_______________/n");
     while (rowsRead > 0) {
         cudaMemcpy(data_d, data, rowSize * rowsRead, cudaMemcpyHostToDevice);
         selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, rowsRead);
@@ -469,7 +472,7 @@ Data *sql_select::selectData(hsql::SelectStatement *stmt) {
     d->~Data();
     free(d);
     free(data);
-    free(resData);
+//    free(resData);
 
     cudaFree(data_d);
     cudaFree(resData_d);
@@ -477,6 +480,7 @@ Data *sql_select::selectData(hsql::SelectStatement *stmt) {
     cudaFree(where_d);
     cudaFree(offsets_d);
     result->switchToRead();
+    result->restartRead();
     return result;
 }
 
