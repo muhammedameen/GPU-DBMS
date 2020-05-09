@@ -12,6 +12,7 @@
 
 #include "../sql-parser/src/sql/Expr.h"
 #include "Data.cuh"
+#include "null.cuh"
 
 enum myExprType{
     CONSTANT_ERR,

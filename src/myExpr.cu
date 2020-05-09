@@ -90,7 +90,8 @@ __global__ void minKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (int *)((char *)data + i * rowSize + colPos);
-        threadMin = threadMin < *currVal ? threadMin : *currVal;
+        if(!isNull(currVal))
+            threadMin = threadMin < *currVal ? threadMin : *currVal;
     }
     atomicMin(min, threadMin);
 }
@@ -104,7 +105,8 @@ __global__ void minKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (float *)((char *)data + i * rowSize + colPos);
-        threadMin = threadMin < *currVal ? threadMin : *currVal;
+        if(!isNull(currVal))
+            threadMin = threadMin < *currVal ? threadMin : *currVal;
     }
     atomicMin(min, threadMin);
 }
@@ -118,7 +120,8 @@ __global__ void maxKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (int *)((char *)data + i * rowSize + colPos);
-        threadMax = threadMax > *currVal ? threadMax : *currVal;
+        if(!isNull(currVal))
+            threadMax = threadMax > *currVal ? threadMax : *currVal;
     }
     atomicMax(max, threadMax);
 }
@@ -132,7 +135,8 @@ __global__ void maxKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (float *)((char *)data + i * rowSize + colPos);
-        threadMax = threadMax > *currVal ? threadMax : *currVal;
+        if(!isNull(currVal))
+            threadMax = threadMax > *currVal ? threadMax : *currVal;
     }
     atomicMax(max, threadMax);
 }
@@ -146,7 +150,8 @@ __global__ void sumKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (int *)((char *)data + i * rowSize + colPos);
-        threadSum += *currVal;
+        if(!isNull(currVal))
+            threadSum += *currVal;
     }
     atomicAdd(sum, threadSum);
 }
@@ -160,9 +165,58 @@ __global__ void sumKernel(void *data, const int colPos, const int rowSize, const
     for (unsigned int i = start; i < end; ++i) {
         if (i >= numRows) break;
         currVal = (float *)((char *)data + i * rowSize + colPos);
-        threadMax += *currVal;
+        if(!isNull(currVal))
+            threadMax += *currVal;
     }
     atomicAdd(sum, threadMax);
+}
+
+__global__ void avgKernel(void *data, const int colPos, const int rowSize, const int numRows, int *sum, long *count) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int threadSum = *sum;
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        if(!isNull(currVal)){
+            threadSum += *currVal;
+            atomicInc(reinterpret_cast<unsigned int *>(count), INT_MAX);
+        }
+    }
+    atomicAdd(sum, threadSum);
+}
+
+__global__ void avgKernel(void *data, const int colPos, const int rowSize, const int numRows, float *sum, long *count) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    float threadMax = *sum;
+    float *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (float *)((char *)data + i * rowSize + colPos);
+        if(!isNull(currVal)){
+            threadMax += *currVal;
+            atomicInc(reinterpret_cast<unsigned int *>(count), INT_MAX);
+        }
+
+    }
+    atomicAdd(sum, threadMax);
+}
+
+__global__ void countKernel(void *data, const int colPos, const int rowSize, const int numRows, long *count) {
+    int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
+    unsigned int start = rowsPerBlock * threadIdx.x;
+    unsigned int end = rowsPerBlock * (threadIdx.x + 1);
+    int *currVal;
+    for (unsigned int i = start; i < end; ++i) {
+        if (i >= numRows) break;
+        currVal = (int *)((char *)data + i * rowSize + colPos);
+        if(!isNull(currVal))
+            atomicInc(reinterpret_cast<unsigned int *>(count), INT_MAX);
+    }
 }
 
 void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames, Data &d) {
@@ -246,7 +300,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                 }
             } else if (strcmp(expr->name, "max") == 0) {
                 if (resType == TYPE_INT) {
-                    int max_h = INT_MAX;
+                    int max_h = INT_MIN;
                     int *max;
                     cudaMalloc(&max, sizeof(int));
                     cudaMemcpy(max, &max_h, sizeof(int), cudaMemcpyHostToDevice);
@@ -261,7 +315,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     printf("Max value is: %d\n", max_h);
                     vector.push_back(newExpr(CONSTANT_INT, (long) max_h));
                 } else if (resType == TYPE_FLOAT) {
-                    float max_h = FLT_MAX;
+                    float max_h = FLT_MIN;
                     float *max;
                     cudaMalloc(&max, sizeof(float));
                     cudaMemcpy(max, &max_h, sizeof(float), cudaMemcpyHostToDevice);
@@ -292,7 +346,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     printf("Sum value is: %d\n", sum_h);
                     vector.push_back(newExpr(CONSTANT_INT, (long) sum_h));
                 } else if (resType == TYPE_FLOAT) {
-                    float sum_h = FLT_MAX;
+                    float sum_h = 0;
                     float *sum;
                     cudaMalloc(&sum, sizeof(float));
                     cudaMemcpy(sum, &sum_h, sizeof(float), cudaMemcpyHostToDevice);
@@ -310,35 +364,61 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                 if (resType == TYPE_INT) {
                     int sum_h = 0;
                     int *sum;
+                    long count_h = 0;
+                    long *count;
                     cudaMalloc(&sum, sizeof(int));
+                    cudaMalloc(&count, sizeof(long));
                     cudaMemcpy(sum, &sum_h, sizeof(int), cudaMemcpyHostToDevice);
+                    cudaMemcpy(count, &count_h, sizeof(long), cudaMemcpyHostToDevice);
                     while (rowsRead > 0) {
-                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        avgKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum, count);
                         rowsRead = d.read(data);
                         cudaDeviceSynchronize();
                         cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
                     }
                     cudaMemcpy(&sum_h, sum, sizeof(int), cudaMemcpyDeviceToHost);
+                    cudaMemcpy(&count_h, count, sizeof(long), cudaMemcpyDeviceToHost);
                     cudaFree(sum);
-                    printf("Sum value is: %d\n", sum_h);
-                    vector.push_back(newExpr(CONSTANT_INT, (long) sum_h));
+                    cudaFree(count);
+                    printf("sum , count : %d, %ld \n", sum_h, count_h);
+                    printf("avg value is: %f\n", (float)sum_h/count_h);
+                    vector.push_back(newExpr(CONSTANT_FLT, (float)sum_h/count_h));
                 } else if (resType == TYPE_FLOAT) {
                     float sum_h = FLT_MAX;
                     float *sum;
+                    long count_h = 0;
+                    long *count;
+                    cudaMalloc(&count, sizeof(long));
                     cudaMalloc(&sum, sizeof(float));
+                    cudaMemcpy(count, &count_h, sizeof(long), cudaMemcpyHostToDevice);
                     cudaMemcpy(sum, &sum_h, sizeof(float), cudaMemcpyHostToDevice);
                     while (rowsRead > 0) {
-                        sumKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum);
+                        avgKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, sum, count);
                         rowsRead = d.read(data);
                         cudaDeviceSynchronize();
                         cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
                     }
                     cudaMemcpy(&sum_h, sum, sizeof(float), cudaMemcpyDeviceToHost);
+                    cudaMemcpy(&count_h, count, sizeof(long), cudaMemcpyDeviceToHost);
+                    cudaFree(count);
                     cudaFree(sum);
-                    vector.push_back(newExpr(CONSTANT_FLT, sum_h));
+                    vector.push_back(newExpr(CONSTANT_FLT, sum_h/count_h));
                 }
             } else if (strcmp(expr->name, "count") == 0) {
-
+                long count = 0;
+                long *count_h;
+                cudaMalloc(&count_h, sizeof(long));
+                cudaMemcpy(count_h, &count, sizeof(long), cudaMemcpyHostToDevice);
+                while (rowsRead > 0) {
+                    countKernel<<<1, NUM_THREADS>>>(data_d, colPos, d.mdata.rowSize, rowsRead, count_h);
+                    rowsRead = d.read(data);
+                    cudaDeviceSynchronize();
+                    cudaMemcpy(data_d, data, rowsRead * d.mdata.rowSize, cudaMemcpyHostToDevice);
+                }
+                cudaMemcpy(&count, count_h, sizeof(int), cudaMemcpyDeviceToHost);
+                cudaFree(count_h);
+                printf("count is: %ld\n", count);
+                vector.push_back(newExpr(CONSTANT_INT, count));
             }
             d.chunkSize = oldChunkSize;
             d.restartRead();
