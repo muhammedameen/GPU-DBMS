@@ -23,6 +23,10 @@
 class sql_select {
 public:
     static void execute(std::string &query);
+
+    static Data *getData(hsql::TableRef *fromTable);
+
+    static Data *selectData(hsql::SelectStatement *pStatement);
 };
 
 __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows);

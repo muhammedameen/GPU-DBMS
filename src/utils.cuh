@@ -34,7 +34,7 @@ public:
 
     static void toLower(std::string &upper);
 
-    static void invalidQuery(std::string &query);
+    static void invalidQuery(std::string query);
 
     static void invalidQuery(std::string &query, std::string &errString);
 

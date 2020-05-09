@@ -45,13 +45,13 @@ typedef struct {
     int childRight;
 } myExpr;
 
-myExpr *newExpr(myExprType type, long intVal);
+myExpr newExpr(myExprType type, long intVal);
 
-myExpr *newExpr(myExprType type, float fVal);
+myExpr newExpr(myExprType type, float fVal);
 
-myExpr *newExpr(myExprType type, char *sVal);
+myExpr newExpr(myExprType type, char *sVal);
 
-myExpr *newExpr(myExprType type);
+myExpr newExpr(myExprType type);
 
 void freeExpr(myExpr *expr);
 

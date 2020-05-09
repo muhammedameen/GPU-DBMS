@@ -8,48 +8,48 @@
 #define NUM_THREADS 512
 
 
-myExpr *newExpr(myExprType type, long intVal) {
-    auto *expr = new myExpr;
-    expr->type = type;
-    expr->iVal = (int)intVal;
-    expr->fVal = 0.0f;
-    expr->sVal[0] = 0;
-    expr->childLeft = -1;
-    expr->childRight = -1;
+myExpr newExpr(myExprType type, long intVal) {
+    myExpr expr;
+    expr.type = type;
+    expr.iVal = (int)intVal;
+    expr.fVal = 0.0f;
+    expr.sVal[0] = 0;
+    expr.childLeft = -1;
+    expr.childRight = -1;
     return expr;
 }
 
-myExpr * newExpr(myExprType type, float fVal){
-    auto *expr = new myExpr;
-    expr->type = type;
-    expr->iVal = 0;
-    expr->fVal = fVal;
-    expr->sVal[0] = 0;
-    expr->childLeft = -1;
-    expr->childRight = -1;
+myExpr newExpr(myExprType type, float fVal){
+    myExpr expr;
+    expr.type = type;
+    expr.iVal = 0;
+    expr.fVal = fVal;
+    expr.sVal[0] = 0;
+    expr.childLeft = -1;
+    expr.childRight = -1;
     return expr;
 }
 
-myExpr * newExpr(myExprType type, char *sVal){
-    auto *expr = new myExpr;
-    expr->type = type;
-    expr->iVal = 0;
-    expr->fVal = 0.0f;
+myExpr newExpr(myExprType type, char *sVal){
+    myExpr expr;
+    expr.type = type;
+    expr.iVal = 0;
+    expr.fVal = 0.0f;
     // expr->sVal = new char[strlen(sVal) + 1];
-    stpcpy(expr->sVal, sVal);
-    expr->childLeft = -1;
-    expr->childRight = -1;
+    stpcpy(expr.sVal, sVal);
+    expr.childLeft = -1;
+    expr.childRight = -1;
     return expr;
 }
 
-myExpr *newExpr(myExprType type){
-    auto *expr = new myExpr;
-    expr->type = type;
-    expr->iVal = 0;
-    expr->fVal = 0.0f;
-    expr->sVal[0] = 0;
-    expr->childLeft = -1;
-    expr->childRight = -1;
+myExpr newExpr(myExprType type){
+    myExpr expr;
+    expr.type = type;
+    expr.iVal = 0;
+    expr.fVal = 0.0f;
+    expr.sVal[0] = 0;
+    expr.childLeft = -1;
+    expr.childRight = -1;
     return expr;
 }
 
@@ -168,13 +168,13 @@ __global__ void sumKernel(void *data, const int colPos, const int rowSize, const
 void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<std::string>& colNames, Data &d) {
     switch (expr->type) {
         case hsql::kExprLiteralFloat:
-            vector.push_back(*newExpr(CONSTANT_FLT, expr->fval));
+            vector.push_back(newExpr(CONSTANT_FLT, expr->fval));
             break;
         case hsql::kExprLiteralString:
-            vector.push_back(*newExpr(CONSTANT_STR, expr->name));
+            vector.push_back(newExpr(CONSTANT_STR, expr->name));
             break;
         case hsql::kExprLiteralInt:
-            vector.push_back(*newExpr(CONSTANT_INT, expr->ival));
+            vector.push_back(newExpr(CONSTANT_INT, expr->ival));
             break;
         case hsql::kExprStar:
             printf("Why is there a `*` here?");
@@ -187,7 +187,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
             for (i = 0; i < colNames.size(); i++) {
                 if (colNames[i] == expr->name) break;
             }
-            vector.push_back(*newExpr(COL_NAME, (long)i));
+            vector.push_back(newExpr(COL_NAME, (long)i));
             break;
         }
         case hsql::kExprFunctionRef: {
@@ -228,7 +228,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     cudaMemcpy(&min_h, min, sizeof(int), cudaMemcpyDeviceToHost);
                     cudaFree(min);
                     printf("Min value is: %d\n", min_h);
-                    vector.push_back(*newExpr(CONSTANT_INT, (long) min_h));
+                    vector.push_back(newExpr(CONSTANT_INT, (long) min_h));
                 } else if (resType == TYPE_FLOAT) {
                     float min_h = FLT_MAX;
                     float *min;
@@ -242,7 +242,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     }
                     cudaMemcpy(&min_h, min, sizeof(float), cudaMemcpyDeviceToHost);
                     cudaFree(min);
-                    vector.push_back(*newExpr(CONSTANT_FLT, min_h));
+                    vector.push_back(newExpr(CONSTANT_FLT, min_h));
                 }
             } else if (strcmp(expr->name, "max") == 0) {
                 if (resType == TYPE_INT) {
@@ -259,7 +259,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     cudaMemcpy(&max_h, max, sizeof(int), cudaMemcpyDeviceToHost);
                     cudaFree(max);
                     printf("Max value is: %d\n", max_h);
-                    vector.push_back(*newExpr(CONSTANT_INT, (long) max_h));
+                    vector.push_back(newExpr(CONSTANT_INT, (long) max_h));
                 } else if (resType == TYPE_FLOAT) {
                     float max_h = FLT_MAX;
                     float *max;
@@ -273,7 +273,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     }
                     cudaMemcpy(&max_h, max, sizeof(float), cudaMemcpyDeviceToHost);
                     cudaFree(max);
-                    vector.push_back(*newExpr(CONSTANT_FLT, max_h));
+                    vector.push_back(newExpr(CONSTANT_FLT, max_h));
                 }
             } else if (strcmp(expr->name, "sum") == 0) {
                 if (resType == TYPE_INT) {
@@ -290,7 +290,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     cudaMemcpy(&sum_h, sum, sizeof(int), cudaMemcpyDeviceToHost);
                     cudaFree(sum);
                     printf("Sum value is: %d\n", sum_h);
-                    vector.push_back(*newExpr(CONSTANT_INT, (long) sum_h));
+                    vector.push_back(newExpr(CONSTANT_INT, (long) sum_h));
                 } else if (resType == TYPE_FLOAT) {
                     float sum_h = FLT_MAX;
                     float *sum;
@@ -304,7 +304,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     }
                     cudaMemcpy(&sum_h, sum, sizeof(float), cudaMemcpyDeviceToHost);
                     cudaFree(sum);
-                    vector.push_back(*newExpr(CONSTANT_FLT, sum_h));
+                    vector.push_back(newExpr(CONSTANT_FLT, sum_h));
                 }
             } else if (strcmp(expr->name, "avg") == 0) {
                 if (resType == TYPE_INT) {
@@ -321,7 +321,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     cudaMemcpy(&sum_h, sum, sizeof(int), cudaMemcpyDeviceToHost);
                     cudaFree(sum);
                     printf("Sum value is: %d\n", sum_h);
-                    vector.push_back(*newExpr(CONSTANT_INT, (long) sum_h));
+                    vector.push_back(newExpr(CONSTANT_INT, (long) sum_h));
                 } else if (resType == TYPE_FLOAT) {
                     float sum_h = FLT_MAX;
                     float *sum;
@@ -335,7 +335,7 @@ void exprToVec(hsql::Expr *expr, std::vector<myExpr> &vector, const std::vector<
                     }
                     cudaMemcpy(&sum_h, sum, sizeof(float), cudaMemcpyDeviceToHost);
                     cudaFree(sum);
-                    vector.push_back(*newExpr(CONSTANT_FLT, sum_h));
+                    vector.push_back(newExpr(CONSTANT_FLT, sum_h));
                 }
             } else if (strcmp(expr->name, "count") == 0) {
 

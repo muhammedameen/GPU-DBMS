@@ -35,7 +35,7 @@ void utils::toLower(std::string &upper) {
                    [](unsigned char c) { return std::tolower(c); });
 }
 
-void utils::invalidQuery(std::string &query) {
+void utils::invalidQuery(std::string query) {
     std::cout << "\"" << query << "\"" << "is not a valid query" << std::endl;
 }
 
