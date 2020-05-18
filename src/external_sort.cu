@@ -12,7 +12,7 @@ void external_sort::sort(Data &data, std::vector<std::string> &colNames) {
     }
 
     int *cols_d;
-    cudaMalloc(&cols_d, sizeof(int) * cols.size());
+    // cudaMalloc&cols_d, sizeof(int) * cols.size());
     cudaMemcpy(cols_d, &cols[0], sizeof(int) * cols.size(), cudaMemcpyHostToDevice);
 
     void *chunk = malloc(data.mdata.rowSize * data.chunkSize);

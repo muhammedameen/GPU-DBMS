@@ -4,9 +4,9 @@
 
 #include "deviceUtil.cuh"
 
-__device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
+__device__ int printStar(void *row, ColType *colTypes, int numCols, char *buff) {
     int start =  0;
-    char buff[100];
+    // char buff[100];
     int buffStart = 0;
     for (int i = 0; i < numCols; start += colTypes[i].size, i++) {
         switch (colTypes[i].type) {
@@ -45,7 +45,61 @@ __device__ void printRowDevice(void *row, ColType *colTypes, int numCols) {
         }
     }
     buff[buffStart] = 0;
+    return buffStart;
+    // printf("%s\n", buff);
+}
+
+__device__ void printRowDevice(void *row, ColType *colTypes, int numCols, const int *dispCols, int numDispCols, const int *offsets) {
+    char *buff = (char *)malloc(sizeof(char) * 250);
+    int buffStart = 0;
+    for (int i = 0; i < numDispCols; ++i) {
+        if (dispCols[i] == -1) {
+            buffStart += printStar(row, colTypes, numCols, buff + buffStart);
+        } else if (dispCols[i] == -2) {
+            printf("Not implemented");
+            free(buff);
+            return;
+        } else {
+            int colId = dispCols[i];
+            switch (colTypes[colId].type) {
+                case TYPE_INT: {
+                    int *temp = ((int *) ((char *) row + offsets[colId]));
+                    if (!isNull(temp)) {
+                        buffStart += appendInt(buff + buffStart, *temp);
+                    } else {
+                        buffStart += appendStr(buff + buffStart, "NULL");
+                    }
+                    break;
+                }
+                case TYPE_FLOAT: {
+                    float *temp = ((float *) ((char *) row + offsets[colId]));
+                    if (!isNull(temp)) {
+                        buffStart += appendFlt(buff + buffStart, *temp);
+                    } else {
+                        buffStart += appendStr(buff + buffStart, "NULL");
+                    }
+                    break;
+                }
+                case TYPE_VARCHAR: {
+                    char *temp = (char *) row + offsets[colId];
+                    if (!isNull(temp)) {
+                        buffStart += appendStr(buff + buffStart, temp);
+                    } else {
+                        buffStart += appendStr(buff + buffStart, "NULL");
+                    }
+                    break;
+                }
+                default:
+                    printf("Not yet implemented");
+            }
+        }
+        if (i != numDispCols - 1) {
+            buffStart += appendStr(buff + buffStart, ", ");
+        }
+    }
+    buff[buffStart] = 0;
     printf("%s\n", buff);
+    free(buff);
 }
 
 __device__ void eval(void *row, int *offset, ColType *types, myExpr *exprArr, void *&res, int &resType) {

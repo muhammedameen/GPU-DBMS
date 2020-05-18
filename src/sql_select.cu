@@ -6,7 +6,7 @@
 
 #define NUM_THREADS 5
 
-__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows) {
+__global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows, const int *dispCols, int numDispCols) {
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
     unsigned int start = rowsPerBlock * threadIdx.x;
     unsigned int end = rowsPerBlock * (threadIdx.x + 1);
@@ -28,7 +28,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
             free(res);
             if (!flag) continue;
             // Condition is satisfied, write code here
-            printRowDevice(row, types, offsetSize);
+            printRowDevice(row, types, offsetSize, dispCols, numDispCols, offset);
         }
     }
 }
@@ -62,7 +62,7 @@ __global__ void selectKernelRes(void *data, int rowSize, int *offset, int offset
             free(res);
             if (!flag) continue;
             // Condition is satisfied, write code here
-            printRowDevice(row, types, offsetSize);
+            // printRowDevice(row, types, offsetSize);
             old = atomicInc(top, numRows + 1);
             memcpy((char *) resData + old * rowSize, row, rowSize);
         }
@@ -168,7 +168,7 @@ getLeft(void *data, bool *matched, int numRows, ColType *typesNew, const int num
 
 void sql_select::execute(std::string &query) {
     hsql::SQLParserResult *result = hsql::SQLParser::parseSQLString(query);
-    std::vector<std::string> columnNames;
+    std::vector<int> columnNames;
 
     if(!result->isValid()) {
         utils::invalidQuery(result->errorMsg());
@@ -178,46 +178,49 @@ void sql_select::execute(std::string &query) {
     cudaDeviceReset();
 
     const auto *stmt = (const hsql::SelectStatement *) result->getStatement(0);
+
+    Data *d = getData(stmt->fromTable);
+
     for (hsql::Expr* expr : *stmt->selectList){
         switch (expr->type) {
             case hsql::kExprStar:
-                columnNames.emplace_back("*");
+                // columnNames.emplace_back("*");
+                columnNames.push_back(-1);
                 break;
             case hsql::kExprColumnRef:
-                columnNames.emplace_back(expr->name);
+                // columnNames.emplace_back(expr->name);
+                columnNames.push_back(d->mdata.colMap[expr->name]);
                 break;
-            // case hsql::kExprTableColumnRef:
-            // inprint(expr->table, expr->name, numIndent);
-            // break;
+                // case hsql::kExprTableColumnRef:
+                // inprint(expr->table, expr->name, numIndent);
+                // break;
             case hsql::kExprLiteralFloat:
-                columnNames.push_back(std::to_string(expr->fval));
+                // columnNames.push_back(std::to_string(expr->fval));
+                columnNames.push_back(-2);
                 break;
             case hsql::kExprLiteralInt:
-                columnNames.push_back(std::to_string(expr->ival));
+                // columnNames.push_back(std::to_string(expr->ival));
+                columnNames.push_back(-2);
                 break;
             case hsql::kExprLiteralString:
-                columnNames.emplace_back(expr->name);
+                // columnNames.emplace_back(expr->name);
+                columnNames.push_back(-2);
                 break;
-            // TODO: kExprFunctionRef (Distinct ?), kExprOperator (col1 + col2 ?)
-            // case hsql::kExprFunctionRef:
-            //     inprint(expr->name, numIndent);
-            //     inprint(expr->expr->name, numIndent + 1);
-            //     break;
-            // case hsql::kExprOperator:
-            //     printOperatorExpression(expr, numIndent);
-            //     break;
+                // TODO: kExprFunctionRef (Distinct ?), kExprOperator (col1 + col2 ?)
+                // case hsql::kExprFunctionRef:
+                //     inprint(expr->name, numIndent);
+                //     inprint(expr->expr->name, numIndent + 1);
+                //     break;
+                // case hsql::kExprOperator:
+                //     printOperatorExpression(expr, numIndent);
+                //     break;
             default:
                 fprintf(stderr, "Unrecognized expression type %d\n", expr->type);
                 return;
         }
     }
-    Data *d = getData(stmt->fromTable);
-    // DEBUGGING
-//    printf("___________3\n");
-//    void *resData = malloc(d->chunkSize * d->mdata.rowSize);
-//    utils::printMultiple(resData, d->mdata.datatypes, d->mdata.rowSize, 2);
-//    d->restartRead();
-    //
+
+
     std::vector<myExpr> whereExpr;
     if (stmt->whereClause != nullptr) {
         exprToVec(stmt->whereClause, whereExpr, d->mdata.columns, *d);
@@ -246,12 +249,16 @@ void sql_select::execute(std::string &query) {
     cudaMalloc(&offsets_d, sizeof(int) * (numCols + 1));
     cudaMemcpy(offsets_d, &offsets[0], sizeof(int) * (numCols + 1), cudaMemcpyHostToDevice);
 
+    int *dispCols_d;
+    cudaMalloc(&dispCols_d, sizeof(int) * columnNames.size());
+    cudaMemcpy(dispCols_d, &columnNames[0], sizeof(int) * columnNames.size(), cudaMemcpyHostToDevice);
+
     int rowsRead = d->read(data);
     cudaMalloc(&data_d, d->chunkSize * rowSize);
-//    printf("_______________/n");
     while (rowsRead > 0) {
         cudaMemcpy(data_d, data, rowSize * rowsRead, cudaMemcpyHostToDevice);
-        selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, rowsRead);
+        selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, rowsRead, dispCols_d,
+                                         columnNames.size());
         rowsRead = d->read(data);
         cudaDeviceSynchronize();
     }
@@ -466,13 +473,13 @@ Data *sql_select::selectData(hsql::SelectStatement *stmt) {
         cudaMemcpy(&numMatches, numMatches_d, sizeof(unsigned int), cudaMemcpyDeviceToHost);
         cudaMemcpy(resData, resData_d, rowSize * numMatches, cudaMemcpyDeviceToHost);
         result->write(resData, rowSize * numMatches);
-        utils::printMultiple(resData, d->mdata.datatypes, rowSize, numMatches);
+        // utils::printMultiple(resData, d->mdata.datatypes, rowSize, numMatches);
     }
 
     d->~Data();
     free(d);
     free(data);
-//    free(resData);
+    free(resData);
 
     cudaFree(data_d);
     cudaFree(resData_d);
