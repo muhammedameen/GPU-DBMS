@@ -4,7 +4,7 @@
 
 #include "sql_select.cuh"
 
-#define NUM_THREADS 5
+#define NUM_THREADS 512
 
 __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSize, ColType *types, myExpr *exprs, int numRows, const int *dispCols, int numDispCols) {
     int rowsPerBlock = (numRows + NUM_THREADS - 1) / NUM_THREADS;
@@ -28,6 +28,7 @@ __global__ void selectKernel(void *data, int rowSize, int *offset, int offsetSiz
             free(res);
             if (!flag) continue;
             // Condition is satisfied, write code here
+            // printf("Row id: %d", i);
             printRowDevice(row, types, offsetSize, dispCols, numDispCols, offset);
         }
     }
@@ -256,10 +257,6 @@ void sql_select::execute(std::string &query) {
     int rowsRead = d->read(data);
     // printf("HERE____________________%d\n", rowSize);
     // utils::printMultiple(data, d->mdata.datatypes, d->mdata.rowSize, d->mdata.rowCount);
-    // printf("FLOAT IN HOST: %d\n", *((char *)data + 25));
-    // printf("FLOAT IN HOST: %d\n", *((char *)data + 26));
-    // printf("FLOAT IN HOST: %d\n", *((char *)data + 27));
-    // printf("FLOAT IN HOST: %d\n", *((char *)data + 28));
     cudaMalloc(&data_d, d->chunkSize * rowSize);
     while (rowsRead > 0) {
         cudaMemcpy(data_d, data, rowSize * rowsRead, cudaMemcpyHostToDevice);

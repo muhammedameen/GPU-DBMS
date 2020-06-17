@@ -71,7 +71,7 @@ void sql_insert::execute(std::string &query) {
             startIndex += mdata.getColType(currCol).size;
         }
         // write row to data
-        // utils::printRow(row, mdata.datatypes);
+        utils::printRow(row, mdata.datatypes);
         std::ofstream in;
         // printf("%d\n", mdata.rowSize);
         in.open(utils::getDataFileName(mdata.tableName), std::ios::binary | std::ios::app);

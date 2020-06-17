@@ -41,7 +41,7 @@ typedef struct {
     myExprType type;
     int iVal;
     float fVal;
-    char sVal[10];
+    char sVal[20];
     int childLeft;
     int childRight;
 } myExpr;

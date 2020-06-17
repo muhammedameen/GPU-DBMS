@@ -8,15 +8,19 @@ __device__ int printStar(void *row, ColType *colTypes, int numCols, char *buff) 
     int start =  0;
     // char buff[100];
     int buffStart = 0;
-    // float *fltptr = (float *)((char *)row + 25);
-    // printf("Float: %f\n", *fltptr);
+    // float flt;
+    // memcpy(&flt, (char *) row + 12, sizeof(float));
+    // float * fltptr = (float *)((char *)row + 12);
+    // printf("Float: %f, %f\n", *fltptr, flt);
     for (int i = 0; i < numCols; start += colTypes[i].size, i++) {
         // printf("i: %d, start: %d\n", i, start);
         switch (colTypes[i].type) {
             case TYPE_INT: {
-                int *temp = ((int *) ((char *) row + start));
-                if (!isNull(temp)) {
-                    buffStart += appendInt(buff + buffStart, *temp);
+                // int *temp = ((int *) ((char *) row + start));
+                int temp;
+                memcpy(&temp, (char *)row + start, sizeof(int));
+                if (!isNull(&temp)) {
+                    buffStart += appendInt(buff + buffStart, temp);
                 } else {
                     buffStart += appendStr(buff + buffStart, "NULL");
                 }
@@ -25,6 +29,7 @@ __device__ int printStar(void *row, ColType *colTypes, int numCols, char *buff) 
             case TYPE_FLOAT: {
                 float temp;
                 memcpy(&temp, (char *) row + start, sizeof(float));
+                // printf("FLOAT VAL: %f, %f\n", temp, *(float *)((char *) row + start));
                 // printf("FLOAT USING MEMCPY: %f\n", temp2);
                 // float *temp = ((float *) ((char *) row + start));
 
@@ -72,9 +77,11 @@ __device__ void printRowDevice(void *row, ColType *colTypes, int numCols, const 
             int colId = dispCols[i];
             switch (colTypes[colId].type) {
                 case TYPE_INT: {
-                    int *temp = ((int *) ((char *) row + offsets[colId]));
-                    if (!isNull(temp)) {
-                        buffStart += appendInt(buff + buffStart, *temp);
+                    // int *temp = ((int *) ((char *) row + offsets[colId]));
+                    int temp;
+                    memcpy(&temp, (char *)row + offsets[colId], sizeof(int));
+                    if (!isNull(&temp)) {
+                        buffStart += appendInt(buff + buffStart, temp);
                     } else {
                         buffStart += appendStr(buff + buffStart, "NULL");
                     }
