@@ -26,6 +26,8 @@ __device__ int myStrncmp(const char *str_a, const char *str_b, unsigned len = 25
 
 __device__ int myStrlen(const char *str);
 
+__device__ int printStar(void *row, ColType *colTypes, int numCols, char *buff);
+
 __device__ void printRowDevice(void *row, ColType *colTypes, int numCols, const int *dispCols, int numDispCols, const int *offsets);
 
 __device__ int appendInt(char *data, int i);

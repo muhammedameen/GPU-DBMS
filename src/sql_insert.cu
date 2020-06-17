@@ -31,6 +31,7 @@ void sql_insert::execute(std::string &query) {
                     case hsql::kExprLiteralFloat:
                         // stmt->values->at(index)->fval
                         memcpy((char *) row + startIndex, &(stmt->values->at(index)->fval), mdata.getColType(currCol).size);
+                        // printf("%f\n", *(float *) ((char *) row + startIndex));
                         break;
                     case hsql::kExprLiteralInt:
                         // stmt->values->at(index)->ival
@@ -38,7 +39,16 @@ void sql_insert::execute(std::string &query) {
                         break;
                     case hsql::kExprLiteralString:
                         // stmt->values->at(index)->name
-                        memcpy((char *) row + startIndex, (stmt->values->at(index)->name), mdata.getColType(currCol).size);
+                    {
+                        char *temp = new char[mdata.getColType(currCol).size];
+                        strncpy(temp, stmt->values->at(index)->name, mdata.getColType(currCol).size - 1);
+                        temp[mdata.getColType(currCol).size - 1] = 0;
+                        // memcpy((char *) row + startIndex, (stmt->values->at(index)->name),
+                        //        mdata.getColType(currCol).size);
+                        memcpy((char *) row + startIndex, temp,
+                               mdata.getColType(currCol).size);
+                        // printf("%d\n", mdata.getColType(currCol).size);
+                    }
                         break;
                     case hsql::kExprStar:
                         break;
@@ -61,9 +71,12 @@ void sql_insert::execute(std::string &query) {
             startIndex += mdata.getColType(currCol).size;
         }
         // write row to data
+        // utils::printRow(row, mdata.datatypes);
         std::ofstream in;
+        // printf("%d\n", mdata.rowSize);
         in.open(utils::getDataFileName(mdata.tableName), std::ios::binary | std::ios::app);
-        in.write(static_cast<const char *>(row), mdata.rowSize);
+        in.write((char *)row, mdata.rowSize);
+        in.close();
         mdata.rowCount += 1;
         mdata.commit();
         // void * printData = malloc(mdata.rowSize * mdata.rowCount);

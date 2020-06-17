@@ -118,6 +118,7 @@ void utils::writeDatabase() {
 void utils::printRow(void *row, std::vector<ColType> &cols) {
     int start = 0;
     for (const auto &c : cols) {
+        // printf("Start: %d\n", start);
         switch (c.type) {
             case TYPE_INT: {
                 int temp = *((int *) ((char *) row + start));

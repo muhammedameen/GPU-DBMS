@@ -41,6 +41,8 @@ int Data::read (void *data){
         f.read(static_cast<char *>(data), (mdata.rowCount - readCount) * mdata.rowSize);
         int rowsRead = mdata.rowCount - readCount;
         readCount = mdata.rowCount;
+        // utils::printMultiple(data, mdata.datatypes, mdata.rowSize, mdata.rowCount);
+        // printf("____________________________________________(");
         return rowsRead;
     } else
         return -1;

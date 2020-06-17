@@ -17,7 +17,9 @@ void sql_truncate::execute(std::string &query) {
 	t >> word;
 	if(!utils::tableExists(word))
 		invalidQuery(query);
-
+    Metadata metadata(word);
+    metadata.rowCount = 0;
+    metadata.commit();
 	//delete files
 	string dataFileName;
 	dataFileName = utils::getDataFileName(word);

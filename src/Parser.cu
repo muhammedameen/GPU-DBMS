@@ -29,6 +29,23 @@ void Parser::parse(std::string query) {
         sql_update::execute(query);
     } else if (type == DELETE) {
         sql_delete::execute(query);
+    } else if (type == LIST) {
+        for (auto & table : utils::tables) {
+            printf("%s\n", table.c_str());
+        }
+    } else if (type == DESCRIBE) {
+        tokenizer t(query);
+        std::string tableName;
+        t >> tableName;
+        t >> tableName;
+        if (utils::tableExists(tableName)) {
+            Metadata metadata(tableName);
+            for (int i = 0; i < metadata.columns.size(); ++i) {
+                printf("%s - %s\n", metadata.columns[i].c_str(), metadata.datatypes[i].str);
+            }
+        } else {
+            printf("Table `%s` doesn't exist", tableName.c_str());
+        }
     }
 }
 
@@ -50,6 +67,10 @@ Parser::QUERY_TYPE Parser::getQueryType(std::string &query) {
         return UPDATE;
     } else if (word == "delete") {
         return DELETE;
+    } else if (word == "list") {
+        return LIST;
+    } else if (word == "describe") {
+        return DESCRIBE;
     }
     return INVALID;
 }

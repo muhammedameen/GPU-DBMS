@@ -254,9 +254,18 @@ void sql_select::execute(std::string &query) {
     cudaMemcpy(dispCols_d, &columnNames[0], sizeof(int) * columnNames.size(), cudaMemcpyHostToDevice);
 
     int rowsRead = d->read(data);
+    // printf("HERE____________________%d\n", rowSize);
+    // utils::printMultiple(data, d->mdata.datatypes, d->mdata.rowSize, d->mdata.rowCount);
+    // printf("FLOAT IN HOST: %d\n", *((char *)data + 25));
+    // printf("FLOAT IN HOST: %d\n", *((char *)data + 26));
+    // printf("FLOAT IN HOST: %d\n", *((char *)data + 27));
+    // printf("FLOAT IN HOST: %d\n", *((char *)data + 28));
     cudaMalloc(&data_d, d->chunkSize * rowSize);
     while (rowsRead > 0) {
         cudaMemcpy(data_d, data, rowSize * rowsRead, cudaMemcpyHostToDevice);
+        // cudaMemcpy(data, data_d, rowSize * rowsRead, cudaMemcpyDeviceToHost);
+        // printf("HERE____________________%d\n", rowSize);
+        // utils::printMultiple(data, d->mdata.datatypes, d->mdata.rowSize, d->mdata.rowCount);
         selectKernel<<<1, NUM_THREADS>>>(data_d, rowSize, offsets_d, numCols, type_d, where_d, rowsRead, dispCols_d,
                                          columnNames.size());
         rowsRead = d->read(data);

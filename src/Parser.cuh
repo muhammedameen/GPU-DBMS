@@ -29,6 +29,8 @@ private:
         SELECT,         // GPU
         UPDATE,         // GPU
         DELETE,         // GPU
+        LIST,
+        DESCRIBE,
         INVALID         // Invalid query type
     };
 
